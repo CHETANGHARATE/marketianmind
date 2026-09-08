@@ -1,0 +1,27 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Set DirectoryIndex to point to public/index.php first, with index.php as fallback
+    DirectoryIndex public/index.php index.php
+
+    # 1. Block access to hidden files and directories (like .env, .git, .env.example)
+    # Allow .well-known for ACME / Let's Encrypt SSL validation
+    RewriteRule "(^|/)\.(?!well-known)" - [F,L]
+
+    # 2. Block direct web access to sensitive application code and storage directories
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests|vendor)(/.*)?$ - [F,L,NC]
+
+    # 3. Block direct web access to sensitive root-level files
+    RewriteRule ^(\.env|composer\.(json|lock)|package(-lock)?\.json|artisan|phpunit\.xml|vite\.config\.js|AGENTS\.md|CLAUDE\.md|README\.md)$ - [F,L,NC]
+
+    # 4. Pass through requests that already target the public directory
+    RewriteCond %{REQUEST_URI} ^/public/
+    RewriteRule ^ - [L]
+
+    # 5. Route all other requests into the public directory
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
