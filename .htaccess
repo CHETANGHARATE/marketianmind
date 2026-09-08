@@ -18,9 +18,8 @@
     # 3. Block direct web access to sensitive root-level files
     RewriteRule ^(\.env|composer\.(json|lock)|package(-lock)?\.json|artisan|phpunit\.xml|vite\.config\.js|AGENTS\.md|CLAUDE\.md|README\.md)$ - [F,L,NC]
 
-    # 4. Pass through requests that already target the public directory
-    RewriteCond %{REQUEST_URI} ^/public/
-    RewriteRule ^ - [L]
+    # 4. Stop rewriting if the request already targets the public directory
+    RewriteRule ^public/ - [L]
 
     # 5. Route all other requests into the public directory
     RewriteRule ^(.*)$ public/$1 [L]
