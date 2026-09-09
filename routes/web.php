@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\CourseCategoryController as AdminCourseCategoryController;
+use App\Http\Controllers\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -67,4 +69,10 @@ Route::middleware(['auth', 'student'])->prefix('student')->name('student.')->gro
 */
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::resource('courses', AdminCourseController::class);
+    Route::resource('course-categories', AdminCourseCategoryController::class)
+        ->parameters(['course-categories' => 'category'])
+        ->names('categories')
+        ->except(['create', 'show', 'edit']);
 });
+
