@@ -84,4 +84,41 @@ class User extends Authenticatable
     {
         return route($this->dashboardRoute());
     }
+
+    /**
+     * Get all enrollments for the user.
+     */
+    public function enrollments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    /**
+     * Get all enrolled courses for the user.
+     */
+    public function enrolledCourses(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Course::class, 'enrollments')
+            ->withPivot(['status', 'enrolled_at', 'completed_at'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Get all lesson progress records for the user.
+     */
+    public function lessonProgress(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(LessonProgress::class);
+    }
+
+    /**
+     * Check if the user is enrolled in a specific course.
+     */
+    public function isEnrolledIn(Course $course): bool
+    {
+        return $this->enrollments()
+            ->where('course_id', $course->id)
+            ->whereIn('status', [\App\Enums\EnrollmentStatus::ACTIVE->value, \App\Enums\EnrollmentStatus::COMPLETED->value])
+            ->exists();
+    }
 }

@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Course;
+use App\Models\Enrollment;
+use App\Models\LessonProgress;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -15,8 +19,25 @@ class LearningController extends Controller
     {
         $user = $request->user();
 
-        // Enrolled courses foundation (empty for now until enrollment system is built)
-        $enrolledCourses = [];
+        $enrolledCourses = $user->enrolledCourses()
+            ->published()
+            ->with(['category'])
+            ->withCount('modules')
+            ->get()
+            ->map(function (Course $course) use ($user) {
+                $progress = $course->progressFor($user);
+
+                return [
+                    'model' => $course,
+                    'title' => $course->title,
+                    'description' => $course->short_description ?? $course->description,
+                    'modules' => $course->modules_count,
+                    'duration' => $course->estimated_duration ?? 'Self-paced',
+                    'actionUrl' => route('student.courses.show', $course),
+                    'progress' => $progress,
+                ];
+            })
+            ->all();
 
         return view('student.my-learning', [
             'user' => $user,
@@ -32,23 +53,38 @@ class LearningController extends Controller
     {
         $user = $request->user();
 
-        $courses = [
-            [
-                'title' => 'Digital Marketing for Business Owners',
-                'description' => 'A practical, non-agency framework to understand digital channels, customer acquisition, and marketing funnels without agency fees.',
-                'modules' => 6,
-                'duration' => '4 Weeks',
-                'level' => 'Beginner to Intermediate',
-                'badge' => 'Featured Course',
-                'actionUrl' => route('course.details'),
-                'actionLabel' => 'Course Curriculum & Preview',
-            ],
-        ];
+        $enrolledCourses = $user->enrolledCourses()
+            ->published()
+            ->with(['category'])
+            ->withCount(['modules'])
+            ->get()
+            ->map(function (Course $course) use ($user) {
+                $progress = $course->progressFor($user);
+                $nextLesson = $course->nextLessonFor($user);
+
+                return [
+                    'model' => $course,
+                    'title' => $course->title,
+                    'slug' => $course->slug,
+                    'description' => $course->short_description ?? $course->description,
+                    'thumbnail' => $course->thumbnailUrl(),
+                    'category' => $course->category?->name,
+                    'modules' => $course->modules_count,
+                    'duration' => $course->estimated_duration ?? 'Self-paced',
+                    'progress' => $progress,
+                    'is_completed' => $progress['is_completed'],
+                    'next_lesson' => $nextLesson,
+                    'actionUrl' => $nextLesson
+                        ? route('student.courses.lessons.show', [$course, $nextLesson])
+                        : route('student.courses.show', $course),
+                    'actionLabel' => $progress['is_completed'] ? 'Review Course' : 'Continue Learning',
+                ];
+            });
 
         return view('student.courses', [
             'user' => $user,
-            'courses' => $courses,
-            'headerTitle' => 'Browse Courses',
+            'enrolledCourses' => $enrolledCourses,
+            'headerTitle' => 'My Courses',
         ]);
     }
 
@@ -59,11 +95,26 @@ class LearningController extends Controller
     {
         $user = $request->user();
 
+        $completedLessons = LessonProgress::query()
+            ->where('user_id', $user->id)
+            ->where('completed', true)
+            ->count();
+
+        $inProgressCourses = Enrollment::query()
+            ->where('user_id', $user->id)
+            ->where('status', EnrollmentStatus::ACTIVE->value)
+            ->count();
+
+        $completedCourses = Enrollment::query()
+            ->where('user_id', $user->id)
+            ->where('status', EnrollmentStatus::COMPLETED->value)
+            ->count();
+
         $progressMetrics = [
-            'total_learning_hours' => 0,
-            'completed_lessons' => 0,
-            'courses_in_progress' => 0,
-            'certificates_earned' => 0,
+            'total_learning_hours' => round($completedLessons * 0.25, 1),
+            'completed_lessons' => $completedLessons,
+            'courses_in_progress' => $inProgressCourses,
+            'certificates_earned' => $completedCourses,
         ];
 
         return view('student.progress', [
@@ -72,5 +123,4 @@ class LearningController extends Controller
             'headerTitle' => 'Learning Progress',
         ]);
     }
-
 }

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'course_module_id',
@@ -149,6 +150,143 @@ class Lesson extends Model
         }
 
         return asset('storage/' . $this->pdf_url);
+    }
+
+    /**
+     * Get all progress records for this lesson.
+     */
+    public function lessonProgress(): HasMany
+    {
+        return $this->hasMany(LessonProgress::class);
+    }
+
+    /**
+     * Check if a specific user has completed this lesson.
+     */
+    public function isCompletedBy(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return $this->lessonProgress()
+            ->where('user_id', $user->id)
+            ->where('completed', true)
+            ->exists();
+    }
+
+    /**
+     * Get safe embed or direct URL for video lessons.
+     */
+    public function embedUrl(): ?string
+    {
+        if (! $this->video_url) {
+            return null;
+        }
+
+        $url = trim($this->video_url);
+
+        // YouTube format: youtube.com/watch?v=ID or youtu.be/ID
+        if (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i', $url, $matches)) {
+            return 'https://www.youtube.com/embed/' . $matches[1] . '?rel=0';
+        }
+
+        // Vimeo format: vimeo.com/ID
+        if (preg_match('/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|video\/|)(\d+)/i', $url, $matches)) {
+            $vimeoId = end($matches);
+            return 'https://player.vimeo.com/video/' . $vimeoId;
+        }
+
+        return $url;
+    }
+
+    /**
+     * Check if the video URL is an embeddable iframe (YouTube or Vimeo).
+     */
+    public function isIframeVideo(): bool
+    {
+        $embed = $this->embedUrl();
+        if (! $embed) {
+            return false;
+        }
+
+        return str_contains($embed, 'youtube.com/embed') || str_contains($embed, 'player.vimeo.com/video');
+    }
+
+    /**
+     * Get the previous published lesson in the course curriculum.
+     */
+    public function previousLesson(): ?self
+    {
+        $course = $this->module?->course;
+        if (! $course) {
+            return null;
+        }
+
+        $orderedLessons = self::query()
+            ->where('lessons.status', LessonStatus::PUBLISHED->value)
+            ->whereHas('module', function ($q) use ($course) {
+                $q->where('course_id', $course->id);
+            })
+            ->join('course_modules', 'lessons.course_module_id', '=', 'course_modules.id')
+            ->orderBy('course_modules.sort_order', 'asc')
+            ->orderBy('lessons.sort_order', 'asc')
+            ->orderBy('lessons.id', 'asc')
+            ->select('lessons.*')
+            ->get();
+
+        $currentIndex = $orderedLessons->search(fn ($item) => $item->id === $this->id);
+
+        if ($currentIndex !== false && $currentIndex > 0) {
+            return $orderedLessons->get($currentIndex - 1);
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the next published lesson in the course curriculum.
+     */
+    public function nextLesson(): ?self
+    {
+        $course = $this->module?->course;
+        if (! $course) {
+            return null;
+        }
+
+        $orderedLessons = self::query()
+            ->where('lessons.status', LessonStatus::PUBLISHED->value)
+            ->whereHas('module', function ($q) use ($course) {
+                $q->where('course_id', $course->id);
+            })
+            ->join('course_modules', 'lessons.course_module_id', '=', 'course_modules.id')
+            ->orderBy('course_modules.sort_order', 'asc')
+            ->orderBy('lessons.sort_order', 'asc')
+            ->orderBy('lessons.id', 'asc')
+            ->select('lessons.*')
+            ->get();
+
+        $currentIndex = $orderedLessons->search(fn ($item) => $item->id === $this->id);
+
+        if ($currentIndex !== false && $currentIndex < $orderedLessons->count() - 1) {
+            return $orderedLessons->get($currentIndex + 1);
+        }
+
+        return null;
+    }
+
+    /**
+     * Retrieve the model for a bound value (supports ID or slug).
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if ($field) {
+            return parent::resolveRouteBinding($value, $field);
+        }
+
+        return is_numeric($value)
+            ? $this->where('id', $value)->first()
+            : $this->where('slug', $value)->first();
     }
 }
 

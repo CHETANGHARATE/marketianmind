@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Enrollment;
+use App\Models\LessonProgress;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -15,11 +18,34 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        // Learning statistics foundation (ready for future database connection)
+        $enrolledCount = Enrollment::query()
+            ->where('user_id', $user->id)
+            ->whereIn('status', [EnrollmentStatus::ACTIVE->value, EnrollmentStatus::COMPLETED->value])
+            ->count();
+
+        $lessonsCompletedCount = LessonProgress::query()
+            ->where('user_id', $user->id)
+            ->where('completed', true)
+            ->count();
+
+        $enrolledCourses = $user->enrolledCourses()->published()->get();
+        $totalPublishedLessons = 0;
+        $totalCompletedLessons = 0;
+
+        foreach ($enrolledCourses as $course) {
+            $p = $course->progressFor($user);
+            $totalPublishedLessons += $p['total'];
+            $totalCompletedLessons += $p['completed'];
+        }
+
+        $overallProgress = $totalPublishedLessons > 0
+            ? (int) round(($totalCompletedLessons / $totalPublishedLessons) * 100)
+            : 0;
+
         $stats = [
-            'enrolled_courses' => 0,
-            'lessons_completed' => 0,
-            'progress_percentage' => 0,
+            'enrolled_courses' => $enrolledCount,
+            'lessons_completed' => $lessonsCompletedCount,
+            'progress_percentage' => min(100, $overallProgress),
         ];
 
         return view('student.dashboard', [
