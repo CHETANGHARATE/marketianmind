@@ -121,4 +121,20 @@ class User extends Authenticatable
             ->whereIn('status', [\App\Enums\EnrollmentStatus::ACTIVE->value, \App\Enums\EnrollmentStatus::COMPLETED->value])
             ->exists();
     }
+
+    /**
+     * Get all orders placed by this user.
+     */
+    public function orders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Get all payments made by this user.
+     */
+    public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
 }

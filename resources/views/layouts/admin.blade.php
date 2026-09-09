@@ -60,6 +60,22 @@
                     </a>
                 </div>
             </div>
+
+            <!-- Orders & Commerce Section -->
+            <div>
+                <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                    Commerce & Sales
+                </p>
+                <div class="space-y-1">
+                    <a href="{{ route('admin.orders.index') }}"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('admin.orders.*') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 {{ request()->routeIs('admin.orders.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        Orders & Transactions
+                    </a>
+                </div>
+            </div>
         </nav>
 
         <!-- Sidebar Footer -->

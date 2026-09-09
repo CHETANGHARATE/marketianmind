@@ -5,17 +5,22 @@ use App\Http\Controllers\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Admin\CourseModuleController as AdminCourseModuleController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\LessonController as AdminLessonController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Public\AboutController;
 use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\CourseController;
 use App\Http\Controllers\Public\HomeController;
+use App\Http\Controllers\RazorpayWebhookController;
+use App\Http\Controllers\Student\CheckoutController as StudentCheckoutController;
 use App\Http\Controllers\Student\CourseController as StudentCourseController;
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
 use App\Http\Controllers\Student\EnrollmentController as StudentEnrollmentController;
 use App\Http\Controllers\Student\LearningController as StudentLearningController;
 use App\Http\Controllers\Student\LessonController as StudentLessonController;
+use App\Http\Controllers\Student\OrderController as StudentOrderController;
 use App\Http\Controllers\Student\ProfileController as StudentProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -55,6 +60,24 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
 
 /*
 |--------------------------------------------------------------------------
+| Public Webhook Routes (Signature Verified & CSRF Exempt)
+|--------------------------------------------------------------------------
+*/
+Route::post('/webhooks/razorpay', [RazorpayWebhookController::class, 'handle'])->name('webhooks.razorpay');
+
+/*
+|--------------------------------------------------------------------------
+| Payment Verification & Status Routes (Authenticated)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->group(function () {
+    Route::post('/payments/razorpay/verify', [PaymentController::class, 'verify'])->name('payments.razorpay.verify');
+    Route::get('/payment/success/{order}', [PaymentController::class, 'success'])->name('payment.success');
+    Route::get('/payment/failed/{order}', [PaymentController::class, 'failed'])->name('payment.failed');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Student Portal Routes (Authenticated & Student Role Protected)
 |--------------------------------------------------------------------------
 */
@@ -74,6 +97,14 @@ Route::middleware(['auth', 'student'])->prefix('student')->name('student.')->gro
     Route::get('/courses/{course}/lessons/{lesson}', [StudentLessonController::class, 'show'])->name('courses.lessons.show');
     Route::post('/courses/{course}/lessons/{lesson}/complete', [StudentLessonController::class, 'complete'])->name('courses.lessons.complete');
     Route::get('/courses/{course}/lessons/{lesson}/pdf', [StudentLessonController::class, 'downloadPdf'])->name('courses.lessons.pdf');
+
+    // Student Paid Course Purchase & Checkout
+    Route::post('/courses/{course}/purchase', [StudentCheckoutController::class, 'purchase'])->name('courses.purchase');
+    Route::get('/courses/checkout/{order}', [StudentCheckoutController::class, 'showCheckout'])->name('courses.checkout');
+
+    // Student Orders & Purchase History
+    Route::get('/orders', [StudentOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [StudentOrderController::class, 'show'])->name('orders.show');
 });
 
 /*
@@ -97,6 +128,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('courses.modules.lessons', AdminLessonController::class)
         ->names('courses.modules.lessons')
         ->except(['show']);
+
+    // Admin Order Management
+    Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
 });
 
 

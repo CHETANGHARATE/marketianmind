@@ -184,6 +184,14 @@ class Course extends Model
     }
 
     /**
+     * Get the effective purchase price in paise (integer).
+     */
+    public function effectivePriceInPaise(): int
+    {
+        return (int) round($this->effectivePrice() * 100);
+    }
+
+    /**
      * Get the full URL for the course thumbnail.
      */
     public function thumbnailUrl(): ?string
@@ -205,6 +213,14 @@ class Course extends Model
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);
+    }
+
+    /**
+     * Get all orders placed for this course.
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
     }
 
     /**

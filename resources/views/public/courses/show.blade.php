@@ -149,13 +149,35 @@
                                         </p>
                                     @endauth
                                 @else
-                                    <div class="space-y-3 text-center">
-                                        <button type="button" disabled class="inline-flex w-full items-center justify-center rounded-lg bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-500 cursor-not-allowed">
-                                            Purchase Course
-                                        </button>
-                                        <div class="rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800 border border-amber-200">
-                                            Purchase functionality coming soon.
-                                        </div>
+                                    @auth
+                                        @if(auth()->user()->isStudent())
+                                            <form action="{{ route('student.courses.purchase', $course) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="inline-flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition font-bold">
+                                                    Buy Now &rarr;
+                                                </button>
+                                            </form>
+                                        @else
+                                            <form action="{{ route('student.courses.purchase', $course) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="inline-flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition font-bold">
+                                                    Buy Course &rarr;
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @else
+                                        <a href="{{ route('login') }}" class="inline-flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition text-center font-bold">
+                                            Login to Buy Now &rarr;
+                                        </a>
+                                        <p class="mt-2 text-center text-xs text-slate-400">
+                                            New here? <a href="{{ route('register') }}" class="text-indigo-600 font-semibold underline">Create free account</a>
+                                        </p>
+                                    @endauth
+                                    <div class="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+                                        <svg class="h-3.5 w-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        </svg>
+                                        <span>Secure 256-Bit Razorpay Checkout</span>
                                     </div>
                                 @endif
                             </div>

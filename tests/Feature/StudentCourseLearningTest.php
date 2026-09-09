@@ -141,14 +141,14 @@ class StudentCourseLearningTest extends TestCase
         $studentResponse->assertSee('Enroll for Free');
     }
 
-    public function test_public_course_detail_for_paid_course_shows_price_and_coming_soon(): void
+    public function test_public_course_detail_for_paid_course_shows_price_and_buy_now(): void
     {
         $response = $this->get(route('courses.show', $this->paidCourse));
 
         $response->assertStatus(200);
         $response->assertSee('Advanced Growth Hacking');
         $response->assertSee('4,999');
-        $response->assertSee('Purchase functionality coming soon');
+        $response->assertSee('Buy Now');
     }
 
     public function test_guest_is_redirected_to_login_when_enrolling_in_free_course(): void

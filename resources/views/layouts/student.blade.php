@@ -55,7 +55,16 @@
                 Learning Progress
             </a>
 
-            <!-- 5. Profile & Settings -->
+            <!-- 5. Purchase History -->
+            <a href="{{ route('student.orders.index') }}"
+               class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('student.orders.*') ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('student.orders.*') ? 'text-indigo-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                Purchase History
+            </a>
+
+            <!-- 6. Profile & Settings -->
             <a href="{{ route('student.profile') }}"
                class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('student.profile') ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900' }}">
                 <svg class="w-5 h-5 {{ request()->routeIs('student.profile') ? 'text-indigo-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">

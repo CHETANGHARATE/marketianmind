@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'student' => \App\Http\Middleware\EnsureUserIsStudent::class,
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/*',
+        ]);
+
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(function (Request $request) {
             return $request->user()?->dashboardUrl() ?? route('home');
