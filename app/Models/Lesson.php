@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'description',
     'lesson_type',
     'video_url',
+    'pdf_url',
     'content',
     'duration',
     'is_preview',
@@ -133,4 +134,21 @@ class Lesson extends Model
     {
         return $this->lesson_type === LessonType::PDF;
     }
+
+    /**
+     * Get the full URL for the lesson PDF document.
+     */
+    public function pdfUrl(): ?string
+    {
+        if (! $this->pdf_url) {
+            return null;
+        }
+
+        if (str_starts_with($this->pdf_url, 'http://') || str_starts_with($this->pdf_url, 'https://')) {
+            return $this->pdf_url;
+        }
+
+        return asset('storage/' . $this->pdf_url);
+    }
 }
+

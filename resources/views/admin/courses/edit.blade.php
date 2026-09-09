@@ -3,7 +3,7 @@
 @section('subcontent')
 <div class="max-w-4xl mx-auto space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <a href="{{ route('admin.courses.index') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white transition mb-2">
                 &larr; Back to Course List
@@ -14,6 +14,16 @@
             <p class="mt-1 text-sm text-slate-400">
                 Update course information, pricing, thumbnail, and publication status.
             </p>
+        </div>
+
+        <div class="flex items-center gap-3 shrink-0">
+            <a href="{{ route('admin.courses.modules.index', $course) }}"
+               class="inline-flex items-center gap-2 rounded-xl bg-amber-500/15 border border-amber-500/30 px-4 py-2.5 text-sm font-bold text-amber-400 hover:bg-amber-500/25 transition">
+                <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                Manage Curriculum / Modules ({{ $course->modules()->count() }})
+            </a>
         </div>
     </div>
 

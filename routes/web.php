@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Admin\CourseCategoryController as AdminCourseCategoryController;
 use App\Http\Controllers\Admin\CourseController as AdminCourseController;
+use App\Http\Controllers\Admin\CourseModuleController as AdminCourseModuleController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\LessonController as AdminLessonController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Public\AboutController;
@@ -74,5 +76,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         ->parameters(['course-categories' => 'category'])
         ->names('categories')
         ->except(['create', 'show', 'edit']);
+
+    // Course Curriculum: Modules & Lessons
+    Route::resource('courses.modules', AdminCourseModuleController::class)
+        ->names('courses.modules')
+        ->except(['show']);
+
+    Route::resource('courses.modules.lessons', AdminLessonController::class)
+        ->names('courses.modules.lessons')
+        ->except(['show']);
 });
+
 

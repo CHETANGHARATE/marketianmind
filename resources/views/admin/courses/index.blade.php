@@ -224,9 +224,14 @@
                                 </td>
 
                                 <!-- Curriculum counts -->
-                                <td class="px-3 py-4 whitespace-nowrap text-xs text-slate-400">
-                                    <span>{{ $course->modules_count }} mod</span> &middot;
-                                    <span>{{ $course->lessons_count }} less</span>
+                                <td class="px-3 py-4 whitespace-nowrap text-xs">
+                                    <a href="{{ route('admin.courses.modules.index', $course) }}"
+                                       class="inline-flex items-center gap-1 rounded-md bg-slate-800/80 px-2 py-1 text-[11px] font-semibold text-slate-300 hover:text-amber-400 hover:bg-slate-800 border border-slate-700 transition"
+                                       title="Manage curriculum modules and lessons">
+                                        <span>{{ $course->modules_count }} mod</span> &middot;
+                                        <span>{{ $course->lessons_count }} less</span>
+                                        <span class="text-amber-400">&rarr;</span>
+                                    </a>
                                 </td>
 
                                 <!-- Created -->
