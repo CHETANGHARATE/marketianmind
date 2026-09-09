@@ -2,10 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
+    use RefreshDatabase;
+
     /**
      * Test that the home page returns a successful response and displays the brand.
      */
@@ -18,22 +22,26 @@ class ExampleTest extends TestCase
     }
 
     /**
-     * Test that the student portal placeholder returns a successful response.
+     * Test that the student portal returns a successful response for authenticated student.
      */
     public function test_the_student_portal_returns_a_successful_response(): void
     {
-        $response = $this->get('/student/dashboard');
+        $student = User::factory()->student()->create();
+
+        $response = $this->actingAs($student)->get('/student/dashboard');
 
         $response->assertStatus(200);
         $response->assertSee('Student Dashboard');
     }
 
     /**
-     * Test that the admin portal placeholder returns a successful response.
+     * Test that the admin portal returns a successful response for authenticated admin.
      */
     public function test_the_admin_portal_returns_a_successful_response(): void
     {
-        $response = $this->get('/admin/dashboard');
+        $admin = User::factory()->admin()->create();
+
+        $response = $this->actingAs($admin)->get('/admin/dashboard');
 
         $response->assertStatus(200);
         $response->assertSee('Admin Dashboard');

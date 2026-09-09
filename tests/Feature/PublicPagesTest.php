@@ -75,11 +75,11 @@ class PublicPagesTest extends TestCase
     }
 
     /**
-     * Test Student and Admin placeholders are still operational.
+     * Test Student and Admin dashboards redirect unauthenticated guests to login.
      */
-    public function test_portal_placeholders_remain_accessible(): void
+    public function test_portal_dashboards_redirect_guests_to_login(): void
     {
-        $this->get('/student/dashboard')->assertStatus(200);
-        $this->get('/admin/dashboard')->assertStatus(200);
+        $this->get('/student/dashboard')->assertRedirect('/login');
+        $this->get('/admin/dashboard')->assertRedirect('/login');
     }
 }

@@ -1,11 +1,15 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Public\AboutController;
 use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\CourseController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
+use App\Http\Controllers\Student\LearningController as StudentLearningController;
+use App\Http\Controllers\Student\ProfileController as StudentProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,18 +25,46 @@ Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 
 /*
 |--------------------------------------------------------------------------
-| Student Portal Routes (Placeholder)
+| Guest Authentication Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('student')->name('student.')->group(function () {
-    Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
+Route::middleware('guest')->group(function () {
+    Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
+    Route::post('/register', [RegisteredUserController::class, 'store']);
+
+    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 });
 
 /*
 |--------------------------------------------------------------------------
-| Admin Portal Routes (Placeholder)
+| Authenticated Session Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('logout');
+
+/*
+|--------------------------------------------------------------------------
+| Student Portal Routes (Authenticated & Student Role Protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'student'])->prefix('student')->name('student.')->group(function () {
+    Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/my-learning', [StudentLearningController::class, 'myLearning'])->name('my-learning');
+    Route::get('/courses', [StudentLearningController::class, 'courses'])->name('courses');
+    Route::get('/progress', [StudentLearningController::class, 'progress'])->name('progress');
+    Route::get('/profile', [StudentProfileController::class, 'show'])->name('profile');
+    Route::put('/profile', [StudentProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [StudentProfileController::class, 'updatePassword'])->name('profile.password.update');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin Portal Routes (Authenticated & Admin Role Protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 });
