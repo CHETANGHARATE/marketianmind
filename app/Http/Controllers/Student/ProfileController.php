@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Http\Requests\Student\PasswordUpdateRequest;
+use App\Http\Requests\Student\ProfileUpdateRequest;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
@@ -27,27 +26,21 @@ class ProfileController extends Controller
     /**
      * Update the student profile information (name and email).
      */
-    public function update(Request $request): RedirectResponse
+    public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
+        $validated = $request->validated();
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => [
-                'required',
-                'string',
-                'lowercase',
-                'email',
-                'max:255',
-                Rule::unique(User::class)->ignore($user->id),
-            ],
-        ]);
-
-        // Only update name and email - never permit role alteration
-        $user->forceFill([
+        $user->fill([
             'name' => trim($validated['name']),
             'email' => trim($validated['email']),
-        ])->save();
+        ]);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
 
         return back()->with('profile_status', 'Your profile information has been updated successfully.');
     }
@@ -55,19 +48,15 @@ class ProfileController extends Controller
     /**
      * Update the student password securely.
      */
-    public function updatePassword(Request $request): RedirectResponse
+    public function updatePassword(PasswordUpdateRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'current_password' => ['required', 'current_password'],
-            'password' => ['required', Password::defaults(), 'confirmed', 'different:current_password'],
-        ], [
-            'current_password.current_password' => 'The current password you provided does not match our records.',
-            'password.different' => 'Your new password must be different from your current password.',
-        ]);
+        $validated = $request->validated();
 
         $request->user()->update([
             'password' => Hash::make($validated['password']),
         ]);
+
+        $request->session()->regenerate();
 
         return back()->with('password_status', 'Your password has been changed successfully.');
     }

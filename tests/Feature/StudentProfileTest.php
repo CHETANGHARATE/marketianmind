@@ -35,6 +35,7 @@ class StudentProfileTest extends TestCase
         $response->assertSee('Student Profile');
         $response->assertSee('Personal Information');
         $response->assertSee('Security & Password', false);
+        $response->assertSee('Account Information');
     }
 
     /**
@@ -50,7 +51,7 @@ class StudentProfileTest extends TestCase
     }
 
     /**
-     * TEST 4 & 5: Authenticated student name and email display correctly.
+     * TEST 4: Authenticated student name and email display correctly.
      */
     public function test_authenticated_student_name_and_email_display_correctly(): void
     {
@@ -69,9 +70,9 @@ class StudentProfileTest extends TestCase
     }
 
     /**
-     * TEST 6: Student can update their name.
+     * TEST 5: Student can update their own name.
      */
-    public function test_student_can_update_their_name(): void
+    public function test_student_can_update_their_own_name(): void
     {
         $student = User::factory()->student()->create([
             'name' => 'Original Name',
@@ -92,9 +93,9 @@ class StudentProfileTest extends TestCase
     }
 
     /**
-     * TEST 7: Student can update their email.
+     * TEST 6: Student can update their own email.
      */
-    public function test_student_can_update_their_email(): void
+    public function test_student_can_update_their_own_email(): void
     {
         $student = User::factory()->student()->create([
             'name' => 'Student Name',
@@ -112,9 +113,9 @@ class StudentProfileTest extends TestCase
     }
 
     /**
-     * TEST 8: Duplicate email cannot be used.
+     * TEST 7: Duplicate email is rejected.
      */
-    public function test_duplicate_email_cannot_be_used(): void
+    public function test_duplicate_email_is_rejected(): void
     {
         User::factory()->create(['email' => 'another@marketian.com']);
         $student = User::factory()->student()->create(['email' => 'current@marketian.com']);
@@ -130,9 +131,53 @@ class StudentProfileTest extends TestCase
     }
 
     /**
-     * TEST 9: Incorrect current password is rejected.
+     * TEST 8: Invalid profile data is rejected (empty fields, invalid email format, name too long).
      */
-    public function test_incorrect_current_password_is_rejected(): void
+    public function test_invalid_profile_data_is_rejected(): void
+    {
+        $student = User::factory()->student()->create([
+            'name' => 'Valid Name',
+            'email' => 'valid@marketian.com',
+        ]);
+
+        // Empty name
+        $res1 = $this->actingAs($student)->put('/student/profile', [
+            'name' => '',
+            'email' => 'valid@marketian.com',
+        ]);
+        $res1->assertSessionHasErrors(['name']);
+
+        // Empty email
+        $res2 = $this->actingAs($student)->put('/student/profile', [
+            'name' => 'Valid Name',
+            'email' => '',
+        ]);
+        $res2->assertSessionHasErrors(['email']);
+
+        // Invalid email format
+        $res3 = $this->actingAs($student)->put('/student/profile', [
+            'name' => 'Valid Name',
+            'email' => 'not-an-email-address',
+        ]);
+        $res3->assertSessionHasErrors(['email']);
+
+        // Name too long (> 255 chars)
+        $res4 = $this->actingAs($student)->put('/student/profile', [
+            'name' => str_repeat('a', 256),
+            'email' => 'valid@marketian.com',
+        ]);
+        $res4->assertSessionHasErrors(['name']);
+
+        // Ensure database state was unchanged
+        $student->refresh();
+        $this->assertEquals('Valid Name', $student->name);
+        $this->assertEquals('valid@marketian.com', $student->email);
+    }
+
+    /**
+     * TEST 9: Wrong current password prevents password change.
+     */
+    public function test_wrong_current_password_prevents_password_change(): void
     {
         $student = User::factory()->student()->create([
             'password' => Hash::make('CorrectPassword123!'),
@@ -150,9 +195,9 @@ class StudentProfileTest extends TestCase
     }
 
     /**
-     * TEST 10, 11, 12: Correct password change works, new password works for login, old password fails.
+     * TEST 10: Valid password change succeeds.
      */
-    public function test_correct_password_change_works_and_authenticates_with_new_password(): void
+    public function test_valid_password_change_succeeds(): void
     {
         $student = User::factory()->student()->create([
             'email' => 'securestudent@marketian.com',
@@ -192,30 +237,47 @@ class StudentProfileTest extends TestCase
     }
 
     /**
-     * TEST 13: Student cannot change their role.
+     * TEST 11: Password confirmation mismatch is rejected.
      */
-    public function test_student_cannot_modify_their_role_via_profile_update(): void
+    public function test_password_confirmation_mismatch_is_rejected(): void
     {
         $student = User::factory()->student()->create([
-            'role' => UserRole::STUDENT,
+            'password' => Hash::make('CorrectPassword123!'),
         ]);
 
-        $this->actingAs($student)->put('/student/profile', [
-            'name' => 'Hacker Name',
-            'email' => $student->email,
-            'role' => 'admin',
+        $response = $this->actingAs($student)->put('/student/profile/password', [
+            'current_password' => 'CorrectPassword123!',
+            'password' => 'NewValidPassword123!',
+            'password_confirmation' => 'MismatchingPassword999!',
         ]);
 
+        $response->assertSessionHasErrors(['password']);
         $student->refresh();
-        $this->assertEquals(UserRole::STUDENT, $student->role);
-        $this->assertTrue($student->isStudent());
-        $this->assertFalse($student->isAdmin());
+        $this->assertTrue(Hash::check('CorrectPassword123!', $student->password));
     }
 
     /**
-     * TEST 14: Student cannot update another user's account.
+     * TEST 12: Password must be different from current password.
      */
-    public function test_student_cannot_update_another_user_account(): void
+    public function test_password_cannot_be_same_as_current_password(): void
+    {
+        $student = User::factory()->student()->create([
+            'password' => Hash::make('SamePassword123!'),
+        ]);
+
+        $response = $this->actingAs($student)->put('/student/profile/password', [
+            'current_password' => 'SamePassword123!',
+            'password' => 'SamePassword123!',
+            'password_confirmation' => 'SamePassword123!',
+        ]);
+
+        $response->assertSessionHasErrors(['password']);
+    }
+
+    /**
+     * TEST 13: Student cannot modify another user's account.
+     */
+    public function test_another_users_account_cannot_be_modified(): void
     {
         $otherUser = User::factory()->student()->create([
             'name' => 'Original Other Name',
@@ -244,6 +306,27 @@ class StudentProfileTest extends TestCase
     }
 
     /**
+     * TEST 14: Student cannot change their role via profile update.
+     */
+    public function test_student_cannot_modify_their_role_via_profile_update(): void
+    {
+        $student = User::factory()->student()->create([
+            'role' => UserRole::STUDENT,
+        ]);
+
+        $this->actingAs($student)->put('/student/profile', [
+            'name' => 'Hacker Name',
+            'email' => $student->email,
+            'role' => 'admin',
+        ]);
+
+        $student->refresh();
+        $this->assertEquals(UserRole::STUDENT, $student->role);
+        $this->assertTrue($student->isStudent());
+        $this->assertFalse($student->isAdmin());
+    }
+
+    /**
      * TEST 15: Existing Dashboard functionality still works.
      */
     public function test_existing_student_dashboard_remains_functional(): void
@@ -254,6 +337,7 @@ class StudentProfileTest extends TestCase
         $this->actingAs($student)->get('/student/my-learning')->assertStatus(200);
         $this->actingAs($student)->get('/student/courses')->assertStatus(200);
         $this->actingAs($student)->get('/student/progress')->assertStatus(200);
+        $this->actingAs($student)->get('/student/orders')->assertStatus(200);
     }
 
     /**

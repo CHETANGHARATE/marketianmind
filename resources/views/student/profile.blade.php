@@ -116,7 +116,7 @@
     </div>
 
     <!-- FORM 2: Security & Password -->
-    <div id="settings" class="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+    <div id="password-settings" class="scroll-mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6">
         <div>
             <h3 class="text-lg font-bold text-slate-900">
                 Security &amp; Password

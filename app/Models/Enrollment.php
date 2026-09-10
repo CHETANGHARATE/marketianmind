@@ -60,6 +60,14 @@ class Enrollment extends Model
     }
 
     /**
+     * Get the certificate associated with this enrollment.
+     */
+    public function certificate(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Certificate::class);
+    }
+
+    /**
      * Scope a query to only include active enrollments.
      */
     public function scopeActive(Builder $query): Builder

@@ -134,6 +134,25 @@ class Course extends Model
     }
 
     /**
+     * Scope a query to search courses by title, short_description, description, or instructor_name.
+     */
+    public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        $term = trim($term ?? '');
+
+        if ($term === '') {
+            return $query;
+        }
+
+        return $query->where(function (Builder $q) use ($term) {
+            $q->where('courses.title', 'like', "%{$term}%")
+                ->orWhere('courses.short_description', 'like', "%{$term}%")
+                ->orWhere('courses.description', 'like', "%{$term}%")
+                ->orWhere('courses.instructor_name', 'like', "%{$term}%");
+        });
+    }
+
+    /**
      * Check if the course is published.
      */
     public function isPublished(): bool
@@ -221,6 +240,29 @@ class Course extends Model
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Get all certificates issued for this course.
+     */
+    public function certificates(): HasMany
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
+    /**
+     * Get the certificate for a specific user if one has been issued.
+     */
+    public function certificateFor(?User $user): ?Certificate
+    {
+        if (! $user) {
+            return null;
+        }
+
+        return Certificate::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $this->id)
+            ->first();
     }
 
     /**

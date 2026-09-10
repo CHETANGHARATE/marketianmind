@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Enums\LessonStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
@@ -56,6 +57,15 @@ class LessonController extends Controller
         $progress = $course->progressFor($user);
         $previousLesson = $lesson->previousLesson();
         $nextLesson = $lesson->nextLesson();
+        $firstLesson = $modules->first()?->lessons?->first();
+
+        $certificate = null;
+        if ($progress['is_completed']) {
+            $certificate = Certificate::query()
+                ->where('user_id', $user->id)
+                ->where('course_id', $course->id)
+                ->first();
+        }
 
         return view('student.courses.learn', [
             'course' => $course,
@@ -66,6 +76,8 @@ class LessonController extends Controller
             'previousLesson' => $previousLesson,
             'nextLesson' => $nextLesson,
             'completedLessonIds' => $completedLessonIds,
+            'firstLesson' => $firstLesson,
+            'certificate' => $certificate,
         ]);
     }
 
@@ -99,8 +111,12 @@ class LessonController extends Controller
                 ->where('course_id', $course->id)
                 ->first();
 
-            if ($enrollment && ! $enrollment->isCompleted()) {
-                $enrollment->markAsCompleted();
+            if ($enrollment) {
+                if (! $enrollment->isCompleted()) {
+                    $enrollment->markAsCompleted();
+                }
+
+                Certificate::issueFor($user, $course, $enrollment);
             }
         }
 

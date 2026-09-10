@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Student;
 
 use App\Enums\EnrollmentStatus;
+use App\Enums\LessonStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Certificate;
 use App\Models\Course;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -18,14 +20,20 @@ class CourseController extends Controller
     {
         $user = $request->user();
 
+        $certificatesByCourseId = Certificate::query()
+            ->where('user_id', $user->id)
+            ->get()
+            ->keyBy('course_id');
+
         $enrolledCourses = $user->enrolledCourses()
             ->published()
             ->with(['category'])
             ->withCount(['modules'])
             ->get()
-            ->map(function (Course $course) use ($user) {
+            ->map(function (Course $course) use ($user, $certificatesByCourseId) {
                 $progress = $course->progressFor($user);
                 $nextLesson = $course->nextLessonFor($user);
+                $certificate = $certificatesByCourseId->get($course->id);
 
                 return [
                     'model' => $course,
@@ -38,6 +46,7 @@ class CourseController extends Controller
                     'duration' => $course->estimated_duration ?? 'Self-paced',
                     'progress' => $progress,
                     'is_completed' => $progress['is_completed'],
+                    'certificate' => $certificate,
                     'next_lesson' => $nextLesson,
                     'actionUrl' => $nextLesson
                         ? route('student.courses.lessons.show', [$course, $nextLesson])
@@ -76,15 +85,26 @@ class CourseController extends Controller
 
         $progress = $course->progressFor($user);
 
+        $modules = $course->modules()
+            ->orderBy('sort_order')
+            ->with(['lessons' => function ($query) {
+                $query->where('status', LessonStatus::PUBLISHED->value)
+                    ->orderBy('sort_order');
+            }])
+            ->get();
+
+        $firstLesson = $modules->first()?->lessons?->first();
+
         return view('student.courses.learn', [
             'course' => $course,
             'currentLesson' => null,
-            'modules' => $course->modules()->with('lessons')->get(),
+            'modules' => $modules,
             'progress' => $progress,
             'isCompleted' => false,
             'previousLesson' => null,
             'nextLesson' => null,
             'completedLessonIds' => [],
+            'firstLesson' => $firstLesson,
         ]);
     }
 }

@@ -14,6 +14,7 @@ use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\CourseController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\RazorpayWebhookController;
+use App\Http\Controllers\Student\CertificateController as StudentCertificateController;
 use App\Http\Controllers\Student\CheckoutController as StudentCheckoutController;
 use App\Http\Controllers\Student\CourseController as StudentCourseController;
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
@@ -105,6 +106,9 @@ Route::middleware(['auth', 'student'])->prefix('student')->name('student.')->gro
     // Student Orders & Purchase History
     Route::get('/orders', [StudentOrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [StudentOrderController::class, 'show'])->name('orders.show');
+
+    // Student Course Certificates
+    Route::get('/certificates/{certificate}', [StudentCertificateController::class, 'show'])->name('certificates.show');
 });
 
 /*

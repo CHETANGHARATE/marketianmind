@@ -76,10 +76,17 @@
                                 </div>
                             </div>
 
-                            <!-- CTA Button -->
-                            <a href="{{ $course['actionUrl'] }}" class="inline-flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition">
-                                {{ $course['actionLabel'] }} &rarr;
-                            </a>
+                            <!-- CTA Buttons -->
+                            <div class="space-y-2">
+                                @if($course['is_completed'] && !empty($course['certificate']))
+                                    <a href="{{ route('student.certificates.show', $course['certificate']) }}" class="inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition">
+                                        View Certificate &rarr;
+                                    </a>
+                                @endif
+                                <a href="{{ $course['actionUrl'] }}" class="inline-flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition">
+                                    {{ $course['actionLabel'] }} &rarr;
+                                </a>
+                            </div>
                         </div>
                     </div>
                 @endforeach
