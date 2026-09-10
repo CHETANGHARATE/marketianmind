@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\StoreCourseRequest;
 use App\Http\Requests\Admin\UpdateCourseRequest;
 use App\Models\Course;
 use App\Models\CourseCategory;
+use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -91,6 +92,14 @@ class CourseController extends Controller
 
         $course = Course::create($validated);
 
+        AuditLogger::log(
+            action: 'created',
+            auditable: $course,
+            description: "Created course: {$course->title}",
+            oldValues: null,
+            newValues: $course->only(['title', 'slug', 'course_category_id', 'price', 'is_free', 'status', 'featured'])
+        );
+
         return redirect()
             ->route('admin.courses.index')
             ->with('success', "Course '{$course->title}' created successfully.");
@@ -126,7 +135,32 @@ class CourseController extends Controller
             $validated['thumbnail'] = $request->file('thumbnail')->store('courses/thumbnails', 'public');
         }
 
+        $trackFields = ['title', 'slug', 'course_category_id', 'price', 'is_free', 'status', 'featured'];
+        $oldValues = $course->only($trackFields);
+        $oldStatus = $course->status;
+
         $course->update($validated);
+
+        $newValues = $course->only($trackFields);
+        $newStatus = $course->status;
+
+        $action = 'updated';
+        $desc = "Updated course: {$course->title}";
+        if ($oldStatus !== CourseStatus::PUBLISHED && $newStatus === CourseStatus::PUBLISHED) {
+            $action = 'published';
+            $desc = "Published course: {$course->title}";
+        } elseif ($oldStatus === CourseStatus::PUBLISHED && $newStatus !== CourseStatus::PUBLISHED) {
+            $action = 'unpublished';
+            $desc = "Unpublished course: {$course->title}";
+        }
+
+        AuditLogger::log(
+            action: $action,
+            auditable: $course,
+            description: $desc,
+            oldValues: $oldValues,
+            newValues: $newValues
+        );
 
         return redirect()
             ->route('admin.courses.index')
@@ -139,6 +173,7 @@ class CourseController extends Controller
     public function destroy(Course $course): RedirectResponse
     {
         $title = $course->title;
+        $courseSnapshot = $course->only(['title', 'slug', 'course_category_id', 'price', 'is_free', 'status']);
 
         // Cleanup thumbnail file if exists
         if ($course->thumbnail && Storage::disk('public')->exists($course->thumbnail)) {
@@ -147,6 +182,15 @@ class CourseController extends Controller
 
         // Deleting course cascades to modules and lessons per Phase 4.1 migrations
         $course->delete();
+
+        AuditLogger::log(
+            action: 'deleted',
+            auditable: 'Course',
+            description: "Deleted course: {$title}",
+            oldValues: $courseSnapshot,
+            newValues: null,
+            resourceLabel: $title
+        );
 
         return redirect()
             ->route('admin.courses.index')

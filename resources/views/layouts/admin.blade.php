@@ -58,6 +58,15 @@
                         </svg>
                         Categories
                     </a>
+
+                    <!-- Course Analytics -->
+                    <a href="{{ route('admin.analytics.courses') }}"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('admin.analytics.courses*') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 {{ request()->routeIs('admin.analytics.courses*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Course Analytics
+                    </a>
                 </div>
             </div>
 
@@ -96,6 +105,29 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                         </svg>
                         Enrollments
+                    </a>
+                    <a href="{{ route('admin.certificates.index') }}"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('admin.certificates.*') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 {{ request()->routeIs('admin.certificates.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                        Certificates
+                    </a>
+                </div>
+            </div>
+
+            <!-- Governance & Security Section -->
+            <div>
+                <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                    Governance & Security
+                </p>
+                <div class="space-y-1">
+                    <a href="{{ route('admin.audit_logs.index') }}"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('admin.audit_logs.*') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 {{ request()->routeIs('admin.audit_logs.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Audit Logs
                     </a>
                 </div>
             </div>
@@ -144,6 +176,9 @@
                     <a href="{{ route('admin.categories.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.categories.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
                         Categories
                     </a>
+                    <a href="{{ route('admin.analytics.courses') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.analytics.courses*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
+                        Course Analytics
+                    </a>
                     <a href="{{ route('admin.orders.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.orders.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
                         Orders & Transactions
                     </a>
@@ -152,6 +187,12 @@
                     </a>
                     <a href="{{ route('admin.enrollments.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.enrollments.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
                         Enrollments
+                    </a>
+                    <a href="{{ route('admin.certificates.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.certificates.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
+                        Certificates
+                    </a>
+                    <a href="{{ route('admin.audit_logs.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.audit_logs.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
+                        Audit Logs
                     </a>
                 </div>
             </nav>
@@ -184,7 +225,11 @@
                     <span class="font-semibold text-slate-300">Admin Control</span>
                     <span>/</span>
                     <span class="text-amber-400 font-medium">
-                        @if(request()->routeIs('admin.courses.*'))
+                        @if(request()->routeIs('admin.audit_logs.*'))
+                            Audit Logs
+                        @elseif(request()->routeIs('admin.analytics.*'))
+                            Course Analytics
+                        @elseif(request()->routeIs('admin.courses.*'))
                             Course Management
                         @elseif(request()->routeIs('admin.categories.*'))
                             Category Management
@@ -194,6 +239,8 @@
                             Student Management
                         @elseif(request()->routeIs('admin.enrollments.*'))
                             Enrollment Management
+                        @elseif(request()->routeIs('admin.certificates.*'))
+                            Certificate Management
                         @else
                             Dashboard
                         @endif

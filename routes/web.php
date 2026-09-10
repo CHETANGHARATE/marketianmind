@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
+use App\Http\Controllers\Admin\CertificateController as AdminCertificateController;
+use App\Http\Controllers\Admin\CourseAnalyticsController;
 use App\Http\Controllers\Admin\CourseCategoryController as AdminCourseCategoryController;
 use App\Http\Controllers\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Admin\CourseModuleController as AdminCourseModuleController;
@@ -146,6 +149,18 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Admin Enrollment Management
     Route::get('/enrollments', [AdminEnrollmentController::class, 'index'])->name('enrollments.index');
     Route::get('/enrollments/{enrollment}', [AdminEnrollmentController::class, 'show'])->name('enrollments.show');
+
+    // Admin Certificate Management
+    Route::get('/certificates', [AdminCertificateController::class, 'index'])->name('certificates.index');
+    Route::get('/certificates/{certificate}', [AdminCertificateController::class, 'show'])->name('certificates.show');
+
+    // Admin Course Analytics
+    Route::get('/analytics/courses', [CourseAnalyticsController::class, 'index'])->name('analytics.courses');
+    Route::get('/analytics/courses/{course}', [CourseAnalyticsController::class, 'show'])->name('analytics.courses.show');
+
+    // Admin Activity & Audit Logs
+    Route::get('/audit-logs', [AdminAuditLogController::class, 'index'])->name('audit_logs.index');
+    Route::get('/audit-logs/{auditLog}', [AdminAuditLogController::class, 'show'])->name('audit_logs.show');
 });
 
 

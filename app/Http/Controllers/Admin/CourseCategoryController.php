@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreCourseCategoryRequest;
 use App\Http\Requests\Admin\UpdateCourseCategoryRequest;
 use App\Models\CourseCategory;
+use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -44,6 +45,14 @@ class CourseCategoryController extends Controller
 
         $category = CourseCategory::create($validated);
 
+        AuditLogger::log(
+            action: 'created',
+            auditable: $category,
+            description: "Created course category: {$category->name}",
+            oldValues: null,
+            newValues: $category->only(['name', 'slug', 'description', 'status', 'order'])
+        );
+
         return redirect()
             ->route('admin.categories.index')
             ->with('success', "Category '{$category->name}' created successfully.");
@@ -60,7 +69,16 @@ class CourseCategoryController extends Controller
             $validated['slug'] = $this->generateUniqueSlug($request->input('slug'), $category->id);
         }
 
+        $oldValues = $category->only(['name', 'slug', 'description', 'status', 'order']);
         $category->update($validated);
+
+        AuditLogger::log(
+            action: 'updated',
+            auditable: $category,
+            description: "Updated course category: {$category->name}",
+            oldValues: $oldValues,
+            newValues: $category->only(['name', 'slug', 'description', 'status', 'order'])
+        );
 
         return redirect()
             ->route('admin.categories.index')
@@ -73,9 +91,19 @@ class CourseCategoryController extends Controller
     public function destroy(CourseCategory $category): RedirectResponse
     {
         $name = $category->name;
+        $categorySnapshot = $category->only(['name', 'slug', 'description', 'status']);
 
         // Foreign key nullOnDelete in Phase 4.1 ensures courses are not deleted
         $category->delete();
+
+        AuditLogger::log(
+            action: 'deleted',
+            auditable: 'CourseCategory',
+            description: "Deleted course category: {$name}",
+            oldValues: $categorySnapshot,
+            newValues: null,
+            resourceLabel: $name
+        );
 
         return redirect()
             ->route('admin.categories.index')
