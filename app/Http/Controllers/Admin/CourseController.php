@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\StoreCourseRequest;
 use App\Http\Requests\Admin\UpdateCourseRequest;
 use App\Models\Course;
 use App\Models\CourseCategory;
+use App\Models\Instructor;
 use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,7 @@ class CourseController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Course::with(['category'])->withCount(['modules', 'lessons']);
+        $query = Course::with(['category', 'instructor'])->withCount(['modules', 'lessons']);
 
         // Search by course title
         if ($request->filled('search')) {
@@ -69,8 +70,9 @@ class CourseController extends Controller
     public function create(): View
     {
         $categories = CourseCategory::active()->orderBy('name')->get();
+        $instructors = Instructor::active()->orderBy('name')->get();
 
-        return view('admin.courses.create', compact('categories'));
+        return view('admin.courses.create', compact('categories', 'instructors'));
     }
 
     /**
@@ -85,6 +87,14 @@ class CourseController extends Controller
             $request->filled('slug') ? $request->input('slug') : $request->input('title')
         );
 
+        // Auto-sync instructor_name if instructor_id is selected
+        if (!empty($validated['instructor_id'])) {
+            $instructor = Instructor::find($validated['instructor_id']);
+            if ($instructor) {
+                $validated['instructor_name'] = $instructor->name;
+            }
+        }
+
         // Handle thumbnail upload
         if ($request->hasFile('thumbnail')) {
             $validated['thumbnail'] = $request->file('thumbnail')->store('courses/thumbnails', 'public');
@@ -97,7 +107,7 @@ class CourseController extends Controller
             auditable: $course,
             description: "Created course: {$course->title}",
             oldValues: null,
-            newValues: $course->only(['title', 'slug', 'course_category_id', 'price', 'is_free', 'status', 'featured'])
+            newValues: $course->only(['title', 'slug', 'course_category_id', 'instructor_id', 'price', 'is_free', 'status', 'featured'])
         );
 
         return redirect()
@@ -111,8 +121,9 @@ class CourseController extends Controller
     public function edit(Course $course): View
     {
         $categories = CourseCategory::orderBy('name')->get();
+        $instructors = Instructor::orderBy('name')->get();
 
-        return view('admin.courses.edit', compact('course', 'categories'));
+        return view('admin.courses.edit', compact('course', 'categories', 'instructors'));
     }
 
     /**
@@ -127,6 +138,14 @@ class CourseController extends Controller
             $validated['slug'] = $this->generateUniqueSlug($request->input('slug'), $course->id);
         }
 
+        // Auto-sync instructor_name if instructor_id is selected
+        if (!empty($validated['instructor_id'])) {
+            $instructor = Instructor::find($validated['instructor_id']);
+            if ($instructor) {
+                $validated['instructor_name'] = $instructor->name;
+            }
+        }
+
         // Handle thumbnail upload and replace old file
         if ($request->hasFile('thumbnail')) {
             if ($course->thumbnail && Storage::disk('public')->exists($course->thumbnail)) {
@@ -135,7 +154,7 @@ class CourseController extends Controller
             $validated['thumbnail'] = $request->file('thumbnail')->store('courses/thumbnails', 'public');
         }
 
-        $trackFields = ['title', 'slug', 'course_category_id', 'price', 'is_free', 'status', 'featured'];
+        $trackFields = ['title', 'slug', 'course_category_id', 'instructor_id', 'price', 'is_free', 'status', 'featured'];
         $oldValues = $course->only($trackFields);
         $oldStatus = $course->status;
 

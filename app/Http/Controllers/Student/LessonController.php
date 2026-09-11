@@ -9,6 +9,7 @@ use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\LessonProgress;
+use App\Models\LessonResource;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,10 +39,13 @@ class LessonController extends Controller
             ]
         );
 
+        $lesson->load(['resources' => fn ($q) => $q->orderBy('sort_order')]);
+
         $modules = $course->modules()
             ->orderBy('sort_order')
             ->with(['lessons' => function ($query) {
                 $query->where('status', LessonStatus::PUBLISHED->value)
+                    ->withCount('resources')
                     ->orderBy('sort_order');
             }])
             ->get();
@@ -112,11 +116,19 @@ class LessonController extends Controller
                 ->first();
 
             if ($enrollment) {
-                if (! $enrollment->isCompleted()) {
+                $wasAlreadyCompleted = $enrollment->isCompleted();
+
+                if (! $wasAlreadyCompleted) {
                     $enrollment->markAsCompleted();
+                    $user->notify(new \App\Notifications\CourseCompletionNotification($course));
+                    app(\App\Services\TransactionalMailService::class)->sendCourseCompletion($user, $course);
                 }
 
-                Certificate::issueFor($user, $course, $enrollment);
+                $certificate = Certificate::issueFor($user, $course, $enrollment);
+                if ($certificate && ! $wasAlreadyCompleted) {
+                    $user->notify(new \App\Notifications\CertificateAvailableNotification($certificate));
+                    app(\App\Services\TransactionalMailService::class)->sendCertificateIssued($certificate);
+                }
             }
         }
 
@@ -156,6 +168,40 @@ class LessonController extends Controller
         }
 
         abort(404, 'PDF file does not exist in storage.');
+    }
+
+    /**
+     * Safely download or access a protected lesson resource.
+     */
+    public function downloadResource(
+        Request $request,
+        Course $course,
+        Lesson $lesson,
+        LessonResource $resource
+    ): BinaryFileResponse|StreamedResponse|RedirectResponse {
+        $user = $request->user();
+
+        $this->authorizeLessonAccess($user, $course, $lesson);
+
+        if ((int) $resource->lesson_id !== (int) $lesson->id) {
+            abort(404, 'The requested resource does not belong to this lesson.');
+        }
+
+        if ($resource->isLink()) {
+            if (! $resource->external_url) {
+                abort(404, 'Resource link URL is missing.');
+            }
+
+            return redirect()->away($resource->external_url);
+        }
+
+        if (! $resource->file_path || ! Storage::disk('public')->exists($resource->file_path)) {
+            abort(404, 'Resource file does not exist in storage.');
+        }
+
+        $downloadFilename = $resource->file_name ?? basename($resource->file_path);
+
+        return Storage::disk('public')->download($resource->file_path, $downloadFilename);
     }
 
     /**

@@ -43,6 +43,12 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
+        // Attribute referral if code provided or present in session/cookie
+        $referralCode = $request->input('ref') ?? $request->input('referral_code');
+        app(\App\Services\ReferralService::class)->attributeRegistration($user, $referralCode, $request->ip());
+
+        app(\App\Services\TransactionalMailService::class)->sendWelcome($user);
+
         return AuthRedirectService::toDashboard($user);
     }
 }

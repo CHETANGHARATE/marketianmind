@@ -105,7 +105,7 @@
                 2. Category & Instructor
             </h2>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 <!-- Course Category -->
                 <div>
                     <label for="course_category_id" class="block text-xs font-bold uppercase tracking-wider text-slate-300">
@@ -126,10 +126,36 @@
                     @enderror
                 </div>
 
+                <!-- Instructor Profile -->
+                <div>
+                    <div class="flex items-center justify-between">
+                        <label for="instructor_id" class="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                            Instructor Profile
+                        </label>
+                        <a href="{{ route('admin.instructors.create') }}" target="_blank" class="text-[11px] font-semibold text-amber-400 hover:text-amber-300 hover:underline">
+                            + New Instructor
+                        </a>
+                    </div>
+                    <select name="instructor_id"
+                            id="instructor_id"
+                            class="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white focus:border-amber-500 focus:outline-hidden focus:ring-1 focus:ring-amber-500">
+                        <option value="">-- None (Use Fallback Name) --</option>
+                        @foreach($instructors as $instructor)
+                            <option value="{{ $instructor->id }}" {{ old('instructor_id') == $instructor->id ? 'selected' : '' }}>
+                                {{ $instructor->name }} {{ $instructor->title ? "({$instructor->title})" : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-[11px] text-slate-500">Selects full instructor bio & avatar profile.</p>
+                    @error('instructor_id')
+                        <p class="mt-1 text-xs text-rose-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <!-- Instructor Name -->
                 <div>
                     <label for="instructor_name" class="block text-xs font-bold uppercase tracking-wider text-slate-300">
-                        Instructor Name <span class="text-slate-500 lowercase font-normal">(optional)</span>
+                        Display / Fallback Name
                     </label>
                     <input type="text"
                            name="instructor_name"
@@ -137,6 +163,7 @@
                            value="{{ old('instructor_name', 'Marketian Mind Team') }}"
                            placeholder="e.g. Chetan Gharate"
                            class="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-amber-500 focus:outline-hidden focus:ring-1 focus:ring-amber-500">
+                    <p class="mt-1 text-[11px] text-slate-500">Auto-filled if instructor profile selected.</p>
                     @error('instructor_name')
                         <p class="mt-1 text-xs text-rose-400">{{ $message }}</p>
                     @enderror

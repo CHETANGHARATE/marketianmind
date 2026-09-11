@@ -47,9 +47,14 @@ class CourseController extends Controller
             $query = Course::query()
                 ->published()
                 ->with(['category'])
-                ->withCount(['modules', 'lessons' => function ($q) {
-                    $q->where('lessons.status', LessonStatus::PUBLISHED->value);
-                }]);
+                ->withAvg('approvedReviews as average_rating', 'rating')
+                ->withCount([
+                    'approvedReviews as reviews_count',
+                    'modules',
+                    'lessons' => function ($q) {
+                        $q->where('lessons.status', LessonStatus::PUBLISHED->value);
+                    }
+                ]);
 
             // 1. Search filter
             if ($searchQuery !== '') {
@@ -168,6 +173,7 @@ class CourseController extends Controller
             if ($course) {
                 $course->load([
                     'category',
+                    'instructor',
                     'modules' => function ($query) {
                         $query->orderBy('sort_order')->with(['lessons' => function ($lq) {
                             $lq->where('lessons.status', LessonStatus::PUBLISHED->value)->orderBy('sort_order');
@@ -241,6 +247,28 @@ class CourseController extends Controller
                 ->first();
         }
 
+        $reviews = new LengthAwarePaginator([], 0, 5);
+        $averageRating = 0.0;
+        $reviewsCount = 0;
+        $ratingDistribution = [];
+        $userReview = null;
+
+        if ($course && Schema::hasTable('course_reviews')) {
+            $reviews = $course->approvedReviews()
+                ->with('user:id,name,role')
+                ->latest()
+                ->paginate(5, ['*'], 'reviews_page')
+                ->withQueryString();
+
+            $averageRating = $course->averageRating();
+            $reviewsCount = $course->reviewsCount();
+            $ratingDistribution = $course->ratingDistribution();
+
+            if ($user && $isEnrolled) {
+                $userReview = $course->userReview($user);
+            }
+        }
+
         return view('public.courses.show', [
             'course' => $course,
             'isEnrolled' => $isEnrolled,
@@ -249,6 +277,11 @@ class CourseController extends Controller
             'progress' => $progress,
             'relatedCourses' => $relatedCourses,
             'user' => $user,
+            'reviews' => $reviews,
+            'averageRating' => $averageRating,
+            'reviewsCount' => $reviewsCount,
+            'ratingDistribution' => $ratingDistribution,
+            'userReview' => $userReview,
         ]);
     }
 }

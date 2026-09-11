@@ -59,6 +59,15 @@
                         Categories
                     </a>
 
+                    <!-- Instructors -->
+                    <a href="{{ route('admin.instructors.index') }}"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('admin.instructors.*') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 {{ request()->routeIs('admin.instructors.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Instructors
+                    </a>
+
                     <!-- Course Analytics -->
                     <a href="{{ route('admin.analytics.courses') }}"
                        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('admin.analytics.courses*') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
@@ -76,12 +85,50 @@
                     Commerce & Sales
                 </p>
                 <div class="space-y-1">
+                    <a href="{{ route('admin.leads.index') }}"
+                       class="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('admin.leads.*') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-5 h-5 {{ request()->routeIs('admin.leads.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <span>Leads &amp; Inquiries</span>
+                        </div>
+                        @php
+                            $pendingLeadsCount = \Illuminate\Support\Facades\Schema::hasTable('leads') ? \App\Models\Lead::where('status', 'new')->count() : 0;
+                        @endphp
+                        @if($pendingLeadsCount > 0)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950">
+                                {{ $pendingLeadsCount }}
+                            </span>
+                        @endif
+                    </a>
                     <a href="{{ route('admin.orders.index') }}"
                        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('admin.orders.*') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                         <svg class="w-5 h-5 {{ request()->routeIs('admin.orders.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                         </svg>
                         Orders & Transactions
+                    </a>
+                    <a href="{{ route('admin.coupons.index') }}"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('admin.coupons.*') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 {{ request()->routeIs('admin.coupons.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                        Coupons & Discounts
+                    </a>
+                    <a href="{{ route('admin.referrals.index') }}"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('admin.referrals.*') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 {{ request()->routeIs('admin.referrals.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        Referrals
+                    </a>
+                    <a href="{{ route('admin.reports.index') }}"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('admin.reports.*') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 {{ request()->routeIs('admin.reports.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Business Reports
                     </a>
                 </div>
             </div>
@@ -113,6 +160,20 @@
                         </svg>
                         Certificates
                     </a>
+                    <a href="{{ route('admin.reviews.index') }}"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('admin.reviews.*') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 {{ request()->routeIs('admin.reviews.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                        Course Reviews
+                    </a>
+                    <a href="{{ route('admin.announcements.index') }}"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('admin.announcements.*') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 {{ request()->routeIs('admin.announcements.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                        </svg>
+                        Announcements
+                    </a>
                 </div>
             </div>
 
@@ -128,6 +189,13 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         Audit Logs
+                    </a>
+                    <a href="{{ route('admin.mail.index') }}"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('admin.mail.*') ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 {{ request()->routeIs('admin.mail.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        Mail &amp; SMTP
                     </a>
                 </div>
             </div>
@@ -176,11 +244,26 @@
                     <a href="{{ route('admin.categories.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.categories.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
                         Categories
                     </a>
+                    <a href="{{ route('admin.instructors.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.instructors.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
+                        Instructors
+                    </a>
                     <a href="{{ route('admin.analytics.courses') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.analytics.courses*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
                         Course Analytics
                     </a>
+                    <a href="{{ route('admin.leads.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.leads.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
+                        Leads &amp; Inquiries
+                    </a>
                     <a href="{{ route('admin.orders.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.orders.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
                         Orders & Transactions
+                    </a>
+                    <a href="{{ route('admin.coupons.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.coupons.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
+                        Coupons & Discounts
+                    </a>
+                    <a href="{{ route('admin.referrals.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.referrals.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
+                        Referrals
+                    </a>
+                    <a href="{{ route('admin.reports.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.reports.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
+                        Business Reports
                     </a>
                     <a href="{{ route('admin.students.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.students.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
                         Students
@@ -191,8 +274,17 @@
                     <a href="{{ route('admin.certificates.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.certificates.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
                         Certificates
                     </a>
+                    <a href="{{ route('admin.reviews.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.reviews.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
+                        Course Reviews
+                    </a>
+                    <a href="{{ route('admin.announcements.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.announcements.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
+                        Announcements
+                    </a>
                     <a href="{{ route('admin.audit_logs.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.audit_logs.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
                         Audit Logs
+                    </a>
+                    <a href="{{ route('admin.mail.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.mail.*') ? 'bg-amber-500/20 text-amber-400' : 'text-slate-300' }}">
+                        Mail &amp; SMTP
                     </a>
                 </div>
             </nav>
@@ -225,7 +317,9 @@
                     <span class="font-semibold text-slate-300">Admin Control</span>
                     <span>/</span>
                     <span class="text-amber-400 font-medium">
-                        @if(request()->routeIs('admin.audit_logs.*'))
+                        @if(request()->routeIs('admin.leads.*'))
+                            Leads &amp; Inquiries
+                        @elseif(request()->routeIs('admin.audit_logs.*'))
                             Audit Logs
                         @elseif(request()->routeIs('admin.analytics.*'))
                             Course Analytics
@@ -233,6 +327,8 @@
                             Course Management
                         @elseif(request()->routeIs('admin.categories.*'))
                             Category Management
+                        @elseif(request()->routeIs('admin.instructors.*'))
+                            Instructors
                         @elseif(request()->routeIs('admin.orders.*'))
                             Commerce & Orders
                         @elseif(request()->routeIs('admin.students.*'))
@@ -241,6 +337,10 @@
                             Enrollment Management
                         @elseif(request()->routeIs('admin.certificates.*'))
                             Certificate Management
+                        @elseif(request()->routeIs('admin.announcements.*'))
+                            Announcements
+                        @elseif(request()->routeIs('admin.mail.*'))
+                            Mail Configuration
                         @else
                             Dashboard
                         @endif

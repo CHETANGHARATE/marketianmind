@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 #[Fillable([
     'course_category_id',
+    'instructor_id',
     'title',
     'slug',
     'short_description',
@@ -64,9 +65,25 @@ class Course extends Model
     /**
      * Get the category that this course belongs to.
      */
-    public function category(): BelongsTo
+     public function category(): BelongsTo
+     {
+         return $this->belongsTo(CourseCategory::class, 'course_category_id');
+     }
+
+    /**
+     * Get the instructor that teaches this course.
+     */
+    public function instructor(): BelongsTo
     {
-        return $this->belongsTo(CourseCategory::class, 'course_category_id');
+        return $this->belongsTo(Instructor::class, 'instructor_id');
+    }
+
+    /**
+     * Get the display name of the instructor.
+     */
+    public function instructorDisplayName(): string
+    {
+        return $this->instructor?->name ?? $this->instructor_name ?? 'Marketian Mind Faculty';
     }
 
     /**
@@ -390,5 +407,99 @@ class Course extends Model
             ? $this->where('id', $value)->first()
             : $this->where('slug', $value)->first();
     }
-}
+    /**
+     * Get all student reviews for this course.
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(CourseReview::class);
+    }
 
+    /**
+     * Get only approved student reviews visible publicly.
+     */
+    public function approvedReviews(): HasMany
+    {
+        return $this->hasMany(CourseReview::class)->where('status', \App\Enums\CourseReviewStatus::APPROVED->value);
+    }
+
+    /**
+     * Get average rating score rounded to 1 decimal place.
+     */
+    public function averageRating(): float
+    {
+        $avg = $this->approvedReviews()->avg('rating');
+        return $avg ? round((float) $avg, 1) : 0.0;
+    }
+
+    /**
+     * Get total count of approved reviews.
+     */
+    public function reviewsCount(): int
+    {
+        return $this->approvedReviews()->count();
+    }
+
+    /**
+     * Get detailed breakdown of star ratings and percentages.
+     *
+     * @return array<int, array{stars: int, count: int, percentage: int}>
+     */
+    public function ratingDistribution(): array
+    {
+        $total = $this->reviewsCount();
+        $ratings = $this->approvedReviews()
+            ->selectRaw('rating, count(*) as count')
+            ->groupBy('rating')
+            ->pluck('count', 'rating')
+            ->all();
+
+        $distribution = [];
+        for ($star = 5; $star >= 1; $star--) {
+            $count = $ratings[$star] ?? 0;
+            $percentage = $total > 0 ? (int) round(($count / $total) * 100) : 0;
+            $distribution[$star] = [
+                'stars' => $star,
+                'count' => $count,
+                'percentage' => $percentage,
+            ];
+        }
+
+        return $distribution;
+    }
+
+    /**
+     * Find a specific user's review for this course.
+     */
+    public function userReview(User $user): ?CourseReview
+    {
+        return $this->reviews()->where('user_id', $user->id)->first();
+    }
+
+    /**
+     * Check if a specific user has reviewed this course.
+     */
+    public function hasReviewFrom(User $user): bool
+    {
+        return $this->reviews()->where('user_id', $user->id)->exists();
+    }
+    /**
+     * Get all wishlist entries for this course.
+     */
+    public function wishlists(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    /**
+     * Check if this course is in a specific user's wishlist.
+     */
+    public function isWishlistedBy(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return $this->wishlists()->where('user_id', $user->id)->exists();
+    }
+}

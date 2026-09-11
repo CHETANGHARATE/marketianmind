@@ -59,6 +59,15 @@
                                     Featured Track
                                 </span>
                             @endif
+
+                            @if(isset($reviewsCount) && $reviewsCount > 0)
+                                <a href="#course-reviews" class="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-700 ring-1 ring-inset ring-amber-500/20 hover:bg-amber-500/20 transition">
+                                    <svg class="h-3.5 w-3.5 text-amber-500 fill-current" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                    <span>{{ number_format($averageRating, 1) }} ({{ $reviewsCount }} {{ Str::plural('review', $reviewsCount) }})</span>
+                                </a>
+                            @endif
                         </div>
 
                         <!-- Course Title -->
@@ -256,6 +265,31 @@
                                 @endif
                             </div>
 
+                            @auth
+                                @if(auth()->user()->isStudent())
+                                    <div class="mt-3">
+                                        <form action="{{ route('student.wishlist.toggle', $course) }}" method="POST">
+                                            @csrf
+                                            @if(auth()->user()->hasInWishlist($course))
+                                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 hover:border-rose-300 transition shadow-2xs cursor-pointer">
+                                                    <svg class="w-4 h-4 text-rose-600 fill-current" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4.5 4.5 0 116.364 6.364L10 19.071l-7.536-7.535a4 4 0 010-5.656z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    Saved to Wishlist
+                                                </button>
+                                            @else
+                                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition shadow-2xs cursor-pointer">
+                                                    <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                                    </svg>
+                                                    Save to Wishlist
+                                                </button>
+                                            @endif
+                                        </form>
+                                    </div>
+                                @endif
+                            @endauth
+
                             <!-- Value Inclusions List -->
                             <div class="mt-6 pt-5 border-t border-slate-100 space-y-3 text-xs text-slate-600">
                                 <div class="flex items-center gap-2.5">
@@ -429,22 +463,112 @@
                                 Meet Your Instructor
                             </h2>
 
-                            <div class="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
-                                <div class="h-14 w-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-xs shrink-0">
-                                    {{ substr($course->instructor_name ?? 'MM', 0, 2) }}
+                            @if($course->instructor)
+                                <div class="mt-5 flex flex-col sm:flex-row sm:items-start gap-5">
+                                    @if($course->instructor->avatarUrl())
+                                        <img src="{{ $course->instructor->avatarUrl() }}"
+                                             alt="{{ $course->instructor->name }}"
+                                             class="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl object-cover border border-slate-200 shadow-xs shrink-0">
+                                    @else
+                                        <div class="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xl sm:text-2xl shadow-xs shrink-0">
+                                            {{ $course->instructor->initials() }}
+                                        </div>
+                                    @endif
+
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                            <div>
+                                                <h3 class="text-lg sm:text-xl font-bold text-slate-900">
+                                                    {{ $course->instructor->name }}
+                                                </h3>
+                                                @if($course->instructor->title)
+                                                    <p class="text-xs sm:text-sm font-medium text-slate-600">
+                                                        {{ $course->instructor->title }}
+                                                    </p>
+                                                @endif
+                                            </div>
+
+                                            <span class="inline-flex items-center gap-1 self-start px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                                <svg class="h-3.5 w-3.5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                                </svg>
+                                                {{ $course->instructor->publishedCoursesCount() }} {{ Str::plural('Course', $course->instructor->publishedCoursesCount()) }}
+                                            </span>
+                                        </div>
+
+                                        @if($course->instructor->bio)
+                                            <p class="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+                                                {{ $course->instructor->bio }}
+                                            </p>
+                                        @else
+                                            <p class="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                                Teaching practical, tested online marketing frameworks created specifically for small business owners and startup founders who need genuine customer acquisition without agency overhead.
+                                            </p>
+                                        @endif
+
+                                        <!-- Social / External Links -->
+                                        @if($course->instructor->website_url || $course->instructor->linkedin_url || $course->instructor->twitter_url)
+                                            <div class="mt-4 flex items-center gap-4 pt-3 border-t border-slate-200">
+                                                @if($course->instructor->website_url)
+                                                    <a href="{{ $course->instructor->website_url }}"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer"
+                                                       title="Personal Website"
+                                                       class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 transition">
+                                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                                                        </svg>
+                                                        <span>Website</span>
+                                                    </a>
+                                                @endif
+
+                                                @if($course->instructor->linkedin_url)
+                                                    <a href="{{ $course->instructor->linkedin_url }}"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer"
+                                                       title="LinkedIn Profile"
+                                                       class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 transition">
+                                                        <svg class="h-4 w-4 fill-current" viewBox="0 0 24 24">
+                                                            <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.64 1.64 0 1 0-.02-3.28 1.64 1.64 0 0 0 .02 3.28m1.4 9.74v-8.37H5.06v8.37z"/>
+                                                        </svg>
+                                                        <span>LinkedIn</span>
+                                                    </a>
+                                                @endif
+
+                                                @if($course->instructor->twitter_url)
+                                                    <a href="{{ $course->instructor->twitter_url }}"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer"
+                                                       title="Twitter / X Profile"
+                                                       class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 transition">
+                                                        <svg class="h-4 w-4 fill-current" viewBox="0 0 24 24">
+                                                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                                                        </svg>
+                                                        <span>Twitter</span>
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 class="text-lg font-bold text-slate-900">
-                                        {{ $course->instructor_name ?? 'Marketian Mind Faculty' }}
-                                    </h3>
-                                    <p class="text-xs font-medium text-slate-500">
-                                        Practitioner &bull; Marketian Mind Marketing Education
-                                    </p>
+                            @else
+                                <div class="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                                    <div class="h-14 w-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-xs shrink-0">
+                                        {{ substr($course->instructorDisplayName(), 0, 2) }}
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-bold text-slate-900">
+                                            {{ $course->instructorDisplayName() }}
+                                        </h3>
+                                        <p class="text-xs font-medium text-slate-500">
+                                            Practitioner &bull; Marketian Mind Marketing Education
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                            <p class="mt-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
-                                Teaching practical, tested online marketing frameworks created specifically for small business owners and startup founders who need genuine customer acquisition without agency overhead.
-                            </p>
+                                <p class="mt-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                    Teaching practical, tested online marketing frameworks created specifically for small business owners and startup founders who need genuine customer acquisition without agency overhead.
+                                </p>
+                            @endif
                         </div>
                     </div>
 
@@ -459,6 +583,416 @@
                             <a href="{{ route('courses') }}" class="inline-flex items-center text-xs font-bold text-indigo-600 hover:text-indigo-700 transition">
                                 &larr; Back to Full Catalog
                             </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+                <!-- Course Student Reviews & Ratings Section -->
+        <section id="course-reviews" class="py-16 bg-white border-b border-slate-200 scroll-mt-8">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <!-- Section Title -->
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Student Feedback</span>
+                        <h2 class="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                            Course Reviews &amp; Ratings
+                        </h2>
+                        <p class="mt-1 text-sm text-slate-600">
+                            Real feedback from business owners and founders enrolled in this program.
+                        </p>
+                    </div>
+
+                    @if(isset($reviewsCount) && $reviewsCount > 0)
+                        <div class="flex items-center gap-3 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200">
+                            <span class="text-3xl font-black text-slate-900">{{ number_format($averageRating, 1) }}</span>
+                            <div>
+                                <div class="flex items-center text-amber-400">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        <svg class="h-4 w-4 {{ $i <= round($averageRating) ? 'text-amber-400 fill-current' : 'text-slate-300' }}" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                        </svg>
+                                    @endfor
+                                </div>
+                                <span class="text-xs font-semibold text-slate-500">{{ $reviewsCount }} {{ Str::plural('rating', $reviewsCount) }}</span>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+                    <!-- Left Column: Rating Breakdown & Write Review Box -->
+                    <div class="lg:col-span-5 space-y-6">
+                        <!-- Rating Breakdown Card -->
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-6">
+                            <h3 class="text-sm font-bold text-slate-900 mb-4">Rating Breakdown</h3>
+                            @if(isset($ratingDistribution) && count($ratingDistribution) > 0)
+                                <div class="space-y-2.5">
+                                    @foreach($ratingDistribution as $star => $data)
+                                        <div class="flex items-center gap-3 text-xs">
+                                            <span class="w-12 font-semibold text-slate-700 flex items-center gap-1">
+                                                <span>{{ $star }}</span>
+                                                <svg class="h-3 w-3 text-amber-500 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                            </span>
+                                            <div class="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden">
+                                                <div class="h-full bg-amber-400 rounded-full transition-all duration-300" style="width: {{ $data['percentage'] }}%"></div>
+                                            </div>
+                                            <span class="w-8 text-right font-medium text-slate-500">{{ $data['percentage'] }}%</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-xs text-slate-500">No ratings breakdown available yet.</p>
+                            @endif
+                        </div>
+
+                        <!-- Student Write / Edit Review Card -->
+                        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+                            @if(auth()->check() && $isEnrolled)
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-sm font-bold text-slate-900">
+                                        {{ isset($userReview) && $userReview ? 'Your Course Review' : 'Write a Review' }}
+                                    </h3>
+                                    <span class="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                                        &check; Enrolled Student
+                                    </span>
+                                </div>
+
+                                @if(isset($userReview) && $userReview)
+                                    <!-- Current Review Display -->
+                                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2 mb-4">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center text-amber-400">
+                                                @for($i = 1; $i <= 5; $i++)
+                                                    <svg class="h-4 w-4 {{ $i <= $userReview->rating ? 'text-amber-400 fill-current' : 'text-slate-200' }}" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                    </svg>
+                                                @endfor
+                                            </div>
+                                            <span class="text-[11px] text-slate-400">{{ $userReview->created_at->diffForHumans() }}</span>
+                                        </div>
+                                        <p class="text-xs text-slate-700 leading-relaxed">{{ $userReview->review }}</p>
+                                        <div class="pt-2 flex items-center justify-between">
+                                            <button type="button" onclick="document.getElementById('edit-review-form').classList.toggle('hidden')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 cursor-pointer">
+                                                Edit Review &rarr;
+                                            </button>
+                                            <form action="{{ route('student.courses.reviews.destroy', [$course, $userReview]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete your review?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-xs font-semibold text-rose-600 hover:text-rose-700 cursor-pointer">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <!-- Review Form -->
+                                <form id="edit-review-form" action="{{ route('student.courses.reviews.store', $course) }}" method="POST" class="space-y-4 {{ isset($userReview) && $userReview ? 'hidden' : '' }}">
+                                    @csrf
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">
+                                            Overall Rating <span class="text-rose-500">*</span>
+                                        </label>
+                                        <div class="flex items-center gap-3">
+                                            @for($r = 5; $r >= 1; $r--)
+                                                <label class="flex items-center gap-1 cursor-pointer text-xs font-bold text-slate-700 hover:text-amber-500 transition">
+                                                    <input type="radio"
+                                                           name="rating"
+                                                           value="{{ $r }}"
+                                                           {{ old('rating', $userReview->rating ?? 5) == $r ? 'checked' : '' }}
+                                                           required
+                                                           class="text-amber-500 focus:ring-amber-500">
+                                                    <span>{{ $r }}★</span>
+                                                </label>
+                                            @endfor
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label for="review" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                                            Your Honest Review <span class="text-rose-500">*</span>
+                                        </label>
+                                        <textarea name="review"
+                                                  id="review"
+                                                  rows="3"
+                                                  required
+                                                  minlength="5"
+                                                  maxlength="2000"
+                                                  placeholder="What did you learn? How has this helped your business growth?"
+                                                  class="w-full rounded-xl border border-slate-300 p-3 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600">{{ old('review', $userReview->review ?? '') }}</textarea>
+                                    </div>
+
+                                    <button type="submit" class="w-full rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-bold py-2.5 text-xs transition cursor-pointer">
+                                        {{ isset($userReview) && $userReview ? 'Update Review' : 'Submit Review' }}
+                                    </button>
+                                </form>
+                            @elseif(auth()->check())
+                                <div class="text-center py-4">
+                                    <svg class="mx-auto h-8 w-8 text-slate-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                    <h4 class="text-xs font-bold text-slate-900">Enrolled Students Only</h4>
+                                    <p class="text-[11px] text-slate-500 mt-1 max-w-xs mx-auto">
+                                        Enroll in this course to share your rating and review with the community.
+                                    </p>
+                                </div>
+                            @else
+                                <div class="text-center py-4">
+                                    <p class="text-xs text-slate-600">
+                                        <a href="{{ route('login') }}" class="font-bold text-indigo-600 hover:underline">Sign in</a> to leave a review if you are enrolled in this course.
+                                    </p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Approved Reviews List -->
+                    <div class="lg:col-span-7 space-y-4">
+                        @forelse($reviews as $reviewItem)
+                            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition hover:border-slate-300">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex items-center gap-3">
+                                        <!-- User Avatar -->
+                                        <div class="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 font-black text-xs flex items-center justify-center shrink-0">
+                                            {{ strtoupper(substr($reviewItem->user->name ?? 'S', 0, 1)) }}
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xs font-bold text-slate-900">{{ $reviewItem->user->name ?? 'Enrolled Student' }}</span>
+                                                <span class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                    &check; Verified
+                                                </span>
+                                            </div>
+                                            <div class="flex items-center gap-1.5 mt-0.5 text-amber-400">
+                                                @for($i = 1; $i <= 5; $i++)
+                                                    <svg class="h-3.5 w-3.5 {{ $i <= $reviewItem->rating ? 'text-amber-400 fill-current' : 'text-slate-200' }}" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                    </svg>
+                                                @endfor
+                                                <span class="text-[11px] font-semibold text-slate-500 ml-1">{{ $reviewItem->rating }}.0</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[11px] text-slate-400 whitespace-nowrap">
+                                        {{ $reviewItem->created_at->diffForHumans() }}
+                                    </span>
+                                </div>
+
+                                <p class="mt-3 text-xs text-slate-700 leading-relaxed">
+                                    {{ $reviewItem->review }}
+                                </p>
+                            </div>
+                        @empty
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50/50 p-8 text-center text-slate-500">
+                                <svg class="mx-auto h-8 w-8 text-slate-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                </svg>
+                                <p class="text-xs font-semibold text-slate-700">No student reviews yet</p>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Enrolled students can be the first to share their learning experience!</p>
+                            </div>
+                        @endforelse
+
+                        @if(method_exists($reviews, 'hasPages') && $reviews->hasPages())
+                            <div class="pt-4">
+                                {{ $reviews->links() }}
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Course Trust & Guarantee Badges -->
+        <section class="py-12 bg-indigo-900 text-white border-b border-indigo-800">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="h-12 w-12 rounded-xl bg-indigo-800/80 border border-indigo-700 flex items-center justify-center shrink-0 text-amber-400">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white">30-Day Money-Back Guarantee</h4>
+                            <p class="text-xs text-indigo-200 mt-0.5">100% risk reversal if not satisfied.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="h-12 w-12 rounded-xl bg-indigo-800/80 border border-indigo-700 flex items-center justify-center shrink-0 text-amber-400">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Lifetime Access &amp; Updates</h4>
+                            <p class="text-xs text-indigo-200 mt-0.5">Continuous curriculum enhancements.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="h-12 w-12 rounded-xl bg-indigo-800/80 border border-indigo-700 flex items-center justify-center shrink-0 text-amber-400">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Verified Certificate</h4>
+                            <p class="text-xs text-indigo-200 mt-0.5">Shareable digital credential.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="h-12 w-12 rounded-xl bg-indigo-800/80 border border-indigo-700 flex items-center justify-center shrink-0 text-amber-400">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Practical Resources</h4>
+                            <p class="text-xs text-indigo-200 mt-0.5">Downloadable worksheets &amp; templates.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Course Frequently Asked Questions -->
+        <section class="py-16 bg-white border-b border-slate-200">
+            <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-10">
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Common Questions</span>
+                    <h2 class="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                        Course Frequently Asked Questions
+                    </h2>
+                </div>
+
+                <div class="space-y-4">
+                    <details class="group rounded-xl border border-slate-200 bg-slate-50/50 p-5 open:bg-white open:shadow-xs transition" open>
+                        <summary class="flex cursor-pointer items-center justify-between font-bold text-slate-900 text-sm select-none">
+                            <span>How long do I have access to this course after enrolling?</span>
+                            <span class="ml-4 shrink-0 transition group-open:-rotate-180 text-indigo-600">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </span>
+                        </summary>
+                        <p class="mt-2.5 text-xs text-slate-600 leading-relaxed">
+                            You get lifetime access! Once enrolled, you can revisit any video lesson, review downloadable materials, and access future curriculum updates anytime at your convenience.
+                        </p>
+                    </details>
+
+                    <details class="group rounded-xl border border-slate-200 bg-slate-50/50 p-5 open:bg-white open:shadow-xs transition">
+                        <summary class="flex cursor-pointer items-center justify-between font-bold text-slate-900 text-sm select-none">
+                            <span>Can I learn at my own schedule?</span>
+                            <span class="ml-4 shrink-0 transition group-open:-rotate-180 text-indigo-600">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </span>
+                        </summary>
+                        <p class="mt-2.5 text-xs text-slate-600 leading-relaxed">
+                            Yes, 100%. There are no fixed class timings. You can study on desktop or mobile whenever you have free time between running your business operations.
+                        </p>
+                    </details>
+
+                    <details class="group rounded-xl border border-slate-200 bg-slate-50/50 p-5 open:bg-white open:shadow-xs transition">
+                        <summary class="flex cursor-pointer items-center justify-between font-bold text-slate-900 text-sm select-none">
+                            <span>What if I get stuck or need help?</span>
+                            <span class="ml-4 shrink-0 transition group-open:-rotate-180 text-indigo-600">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </span>
+                        </summary>
+                        <p class="mt-2.5 text-xs text-slate-600 leading-relaxed">
+                            You can reach our educational support team anytime via our contact inquiry form, and faculty members provide regular guidance for enrolled students.
+                        </p>
+                    </details>
+
+                    <details class="group rounded-xl border border-slate-200 bg-slate-50/50 p-5 open:bg-white open:shadow-xs transition">
+                        <summary class="flex cursor-pointer items-center justify-between font-bold text-slate-900 text-sm select-none">
+                            <span>What payment methods are supported?</span>
+                            <span class="ml-4 shrink-0 transition group-open:-rotate-180 text-indigo-600">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </span>
+                        </summary>
+                        <p class="mt-2.5 text-xs text-slate-600 leading-relaxed">
+                            We support UPI, Credit Cards, Debit Cards, NetBanking, and Digital Wallets via secure Razorpay checkout.
+                        </p>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+        <!-- Course Lead Inquiry / Pre-Enrollment Questions Form -->
+        <section class="py-14 bg-slate-50 border-b border-slate-200">
+            <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+                <div class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-10 shadow-sm">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div class="md:max-w-md">
+                            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Pre-Enrollment Inquiries</span>
+                            <h3 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
+                                Have questions before enrolling?
+                            </h3>
+                            <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+                                Not sure if this course fits your exact business model? Send a question directly to our course faculty and we'll reply within 1 business day.
+                            </p>
+                        </div>
+
+                        <div class="flex-1 min-w-0 md:max-w-sm">
+                            @if(session('lead_success'))
+                                <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-xs font-semibold text-emerald-800">
+                                    {{ session('lead_success') }}
+                                </div>
+                            @else
+                                <form action="{{ route('leads.store') }}" method="POST" class="space-y-3">
+                                    @csrf
+                                    <!-- Honeypot -->
+                                    <div style="display:none !important;" aria-hidden="true">
+                                        <label for="website_course_inq">Website</label>
+                                        <input type="text" name="website" id="website_course_inq" tabindex="-1" autocomplete="off">
+                                    </div>
+                                    <input type="hidden" name="course_id" value="{{ $course->id }}">
+                                    <input type="hidden" name="source" value="course_landing_faq">
+                                    <input type="hidden" name="subject" value="Pre-enrollment Question: {{ $course->title }}">
+
+                                    <div>
+                                        <input type="text"
+                                               name="name"
+                                               required
+                                               value="{{ old('name') }}"
+                                               placeholder="Your Name"
+                                               class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600">
+                                    </div>
+
+                                    <div>
+                                        <input type="email"
+                                               name="email"
+                                               required
+                                               value="{{ old('email') }}"
+                                               placeholder="Your Email Address"
+                                               class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600">
+                                    </div>
+
+                                    <div>
+                                        <textarea name="message"
+                                                  rows="2"
+                                                  required
+                                                  placeholder="What would you like to know before enrolling?"
+                                                  class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600">{{ old('message') }}</textarea>
+                                    </div>
+
+                                    <button type="submit"
+                                            class="w-full rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition cursor-pointer">
+                                        Ask Faculty &rarr;
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     </div>
                 </div>

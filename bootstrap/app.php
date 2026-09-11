@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'student' => \App\Http\Middleware\EnsureUserIsStudent::class,
         ]);
 
+        $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeadersMiddleware::class,
+        ]);
+
         $middleware->validateCsrfTokens(except: [
             'webhooks/*',
         ]);

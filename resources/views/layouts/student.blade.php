@@ -46,6 +46,15 @@
                 Browse Courses
             </a>
 
+            <!-- 4. Wishlist -->
+            <a href="{{ route('student.wishlist.index') }}"
+               class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('student.wishlist.*') ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('student.wishlist.*') ? 'text-indigo-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                Wishlist
+            </a>
+
             <!-- 4. Learning Progress -->
             <a href="{{ route('student.progress') }}"
                class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('student.progress') ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900' }}">
@@ -64,7 +73,32 @@
                 Purchase History
             </a>
 
-            <!-- 6. Profile & Account -->
+            <!-- 6. Referrals -->
+            <a href="{{ route('student.referrals.index') }}"
+               class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('student.referrals.*') ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('student.referrals.*') ? 'text-indigo-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                Refer Friends
+            </a>
+
+            <!-- 7. Notifications -->
+            <a href="{{ route('student.notifications.index') }}"
+               class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('student.notifications.*') ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900' }}">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 {{ request()->routeIs('student.notifications.*') ? 'text-indigo-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <span>Notifications</span>
+                </div>
+                @if(auth()->check() && auth()->user()->unreadNotifications()->count() > 0)
+                    <span class="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                        {{ auth()->user()->unreadNotifications()->count() }}
+                    </span>
+                @endif
+            </a>
+
+            <!-- 7. Profile & Account -->
             <a href="{{ route('student.profile') }}"
                class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('student.profile*') ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900' }}">
                 <svg class="w-5 h-5 {{ request()->routeIs('student.profile*') ? 'text-indigo-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -113,11 +147,25 @@
                 <a href="{{ route('student.courses') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold {{ request()->routeIs('student.courses') ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600' }}">
                     Browse Courses
                 </a>
+                <a href="{{ route('student.wishlist.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold {{ request()->routeIs('student.wishlist.*') ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600' }}">
+                    Wishlist
+                </a>
                 <a href="{{ route('student.progress') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold {{ request()->routeIs('student.progress') ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600' }}">
                     Learning Progress
                 </a>
                 <a href="{{ route('student.orders.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold {{ request()->routeIs('student.orders.*') ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600' }}">
                     Purchase History
+                </a>
+                <a href="{{ route('student.referrals.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold {{ request()->routeIs('student.referrals.*') ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600' }}">
+                    Refer Friends
+                </a>
+                <a href="{{ route('student.notifications.index') }}" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold {{ request()->routeIs('student.notifications.*') ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600' }}">
+                    <span>Notifications</span>
+                    @if(auth()->check() && auth()->user()->unreadNotifications()->count() > 0)
+                        <span class="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                            {{ auth()->user()->unreadNotifications()->count() }}
+                        </span>
+                    @endif
                 </a>
                 <a href="{{ route('student.profile') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold {{ request()->routeIs('student.profile*') ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600' }}">
                     Profile &amp; Account
@@ -157,6 +205,19 @@
             <div class="flex items-center gap-4">
                 <a href="{{ route('home') }}" class="hidden sm:inline-flex items-center text-xs font-semibold text-slate-600 hover:text-indigo-600 transition">
                     Visit Website &rarr;
+                </a>
+
+                <!-- Notification Bell -->
+                <a href="{{ route('student.notifications.index') }}" class="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl transition" title="Notifications">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    @if(auth()->check() && auth()->user()->unreadNotifications()->count() > 0)
+                        <span class="absolute top-1.5 right-1.5 flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                        </span>
+                    @endif
                 </a>
 
                 <!-- Profile Dropdown Container -->

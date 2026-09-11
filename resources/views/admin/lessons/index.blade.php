@@ -142,6 +142,20 @@
                                 <!-- Actions -->
                                 <td class="py-4 pl-3 pr-4 sm:pr-6 whitespace-nowrap text-right text-xs">
                                     <div class="flex items-center justify-end gap-2">
+                                        <a href="{{ route('admin.courses.modules.lessons.resources.index', [$course, $module, $lesson]) }}"
+                                           class="inline-flex items-center gap-1 rounded-lg bg-indigo-500/10 px-2.5 py-1.5 text-xs font-semibold text-indigo-400 hover:bg-indigo-500/20 border border-indigo-500/20 transition"
+                                           title="Manage downloadable resources and links">
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                            </svg>
+                                            <span>Resources</span>
+                                            @if($lesson->resources()->count() > 0)
+                                                <span class="ml-0.5 rounded-full bg-indigo-500/20 px-1.5 py-0.2 text-[10px] font-bold text-indigo-300">
+                                                    {{ $lesson->resources()->count() }}
+                                                </span>
+                                            @endif
+                                        </a>
+
                                         <a href="{{ route('admin.courses.modules.lessons.edit', [$course, $module, $lesson]) }}"
                                            class="rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white border border-slate-700 transition">
                                             Edit

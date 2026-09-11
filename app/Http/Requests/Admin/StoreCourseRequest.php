@@ -44,6 +44,7 @@ class StoreCourseRequest extends FormRequest
             'short_description' => ['required', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
             'course_category_id' => ['nullable', 'integer', 'exists:course_categories,id'],
+            'instructor_id' => ['nullable', 'integer', 'exists:instructors,id'],
             'instructor_name' => ['nullable', 'string', 'max:255'],
             'is_free' => ['boolean'],
             'price' => ['nullable', 'numeric', 'min:0', 'max:999999.99', 'required_unless:is_free,true'],

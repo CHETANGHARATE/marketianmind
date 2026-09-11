@@ -13,8 +13,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'user_id',
     'course_id',
+    'coupon_id',
+    'coupon_code',
     'order_number',
     'razorpay_order_id',
+    'original_amount',
+    'discount_amount',
     'amount',
     'currency',
     'status',
@@ -170,5 +174,53 @@ class Order extends Model
     public function formattedAmount(): string
     {
         return '₹' . number_format($this->amountInRupees(), 2);
+    }
+    /**
+     * Get the coupon applied to this order, if any.
+     */
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
+    }
+
+    /**
+     * Check if a coupon is applied.
+     */
+    public function hasCoupon(): bool
+    {
+        return ! empty($this->coupon_code) || ! is_null($this->coupon_id);
+    }
+
+    /**
+     * Get original amount before coupon discount in INR Rupees.
+     */
+    public function originalAmountInRupees(): float
+    {
+        $orig = $this->original_amount ?? $this->amount;
+        return round($orig / 100, 2);
+    }
+
+    /**
+     * Formatted original amount before discount.
+     */
+    public function formattedOriginalAmount(): string
+    {
+        return '₹' . number_format($this->originalAmountInRupees(), 2);
+    }
+
+    /**
+     * Get discount amount in INR Rupees.
+     */
+    public function discountAmountInRupees(): float
+    {
+        return round(($this->discount_amount ?? 0) / 100, 2);
+    }
+
+    /**
+     * Formatted discount amount.
+     */
+    public function formattedDiscountAmount(): string
+    {
+        return '₹' . number_format($this->discountAmountInRupees(), 2);
     }
 }

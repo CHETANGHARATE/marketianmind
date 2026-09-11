@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Models\Enrollment;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Services\CouponService;
 use App\Services\RazorpayService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -95,6 +96,12 @@ class PaymentController extends Controller
                 $lockedOrder->markPaid();
             }
 
+            // Record coupon usage if order used a coupon
+            app(CouponService::class)->recordUsage($lockedOrder);
+
+            // Attribute referral conversion if order belongs to a referred student
+            app(\App\Services\ReferralService::class)->attributeConversion($lockedOrder);
+
             // Create or activate enrollment
             $enrollment = Enrollment::query()
                 ->where('user_id', $user->id)
@@ -114,6 +121,12 @@ class PaymentController extends Controller
                     'enrolled_at' => now(),
                 ]);
             }
+
+            $user->notify(new \App\Notifications\PaymentSuccessNotification($lockedOrder));
+            if ($lockedOrder->course) {
+                $user->notify(new \App\Notifications\CourseEnrollmentNotification($lockedOrder->course));
+            }
+            app(\App\Services\TransactionalMailService::class)->sendOrderConfirmation($lockedOrder);
         });
 
         return redirect()->route('payment.success', $order);

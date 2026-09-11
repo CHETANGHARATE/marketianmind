@@ -9,6 +9,7 @@ use App\Models\Enrollment;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\RazorpayWebhookEvent;
+use App\Services\CouponService;
 use App\Services\RazorpayService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -133,6 +134,9 @@ class RazorpayWebhookController extends Controller
                 $lockedOrder->markPaid();
             }
 
+            // Attribute referral conversion if order belongs to a referred student
+            app(\App\Services\ReferralService::class)->attributeConversion($lockedOrder);
+
             $enrollment = Enrollment::query()
                 ->where('user_id', $lockedOrder->user_id)
                 ->where('course_id', $lockedOrder->course_id)
@@ -150,6 +154,15 @@ class RazorpayWebhookController extends Controller
                     'status' => EnrollmentStatus::ACTIVE,
                     'enrolled_at' => now(),
                 ]);
+            }
+
+            $user = \App\Models\User::find($lockedOrder->user_id);
+            if ($user) {
+                $user->notify(new \App\Notifications\PaymentSuccessNotification($lockedOrder));
+                if ($lockedOrder->course) {
+                    $user->notify(new \App\Notifications\CourseEnrollmentNotification($lockedOrder->course));
+                }
+                app(\App\Services\TransactionalMailService::class)->sendOrderConfirmation($lockedOrder);
             }
         });
     }

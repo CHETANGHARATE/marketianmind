@@ -58,6 +58,9 @@ class EnrollmentController extends Controller
             ]);
         }
 
+        $user->notify(new \App\Notifications\CourseEnrollmentNotification($course));
+        app(\App\Services\TransactionalMailService::class)->sendCourseEnrollment($user, $course);
+
         return redirect()
             ->route('student.courses.show', $course)
             ->with('status', 'Congratulations! You have successfully enrolled in this course.');

@@ -29,59 +29,127 @@
                             Fill out the form below and our team will get back to you within 1-2 business days.
                         </p>
 
-                        <!-- Form UI (No backend submission required yet per Phase 2 scope) -->
-                        <form action="#" method="GET" onsubmit="event.preventDefault(); document.getElementById('form-feedback').classList.remove('hidden');" class="space-y-6">
-                            <div id="form-feedback" class="hidden rounded-lg bg-emerald-50 border border-emerald-200 p-4 text-xs font-medium text-emerald-800">
-                                Thank you for reaching out! In Phase 2 this form is in UI preview mode. Live form handling will be connected in an upcoming phase.
+                        @if(session('success'))
+                            <div class="mb-6 rounded-xl bg-emerald-50 border border-emerald-200 p-4 flex items-start gap-3">
+                                <svg class="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div>
+                                    <h4 class="text-sm font-bold text-emerald-900">Message Received</h4>
+                                    <p class="text-xs text-emerald-700 mt-0.5">{{ session('success') }}</p>
+                                </div>
+                            </div>
+                        @endif
+
+                        <form action="{{ route('contact.submit') }}" method="POST" class="space-y-6">
+                            @csrf
+
+                            <!-- Honeypot Anti-Spam Field -->
+                            <div style="display:none !important;" aria-hidden="true">
+                                <label for="website">Website</label>
+                                <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
                                     <label for="name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                                        Your Name
+                                        Your Name <span class="text-rose-500">*</span>
                                     </label>
                                     <input
                                         type="text"
                                         id="name"
                                         name="name"
+                                        value="{{ old('name') }}"
                                         placeholder="e.g. Alex Sharma"
                                         required
-                                        class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                                        class="w-full rounded-lg border @error('name') border-rose-400 @else border-slate-300 @enderror px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600"
                                     >
+                                    @error('name')
+                                        <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
+                                    @enderror
                                 </div>
 
                                 <div>
                                     <label for="email" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                                        Email Address
+                                        Email Address <span class="text-rose-500">*</span>
                                     </label>
                                     <input
                                         type="email"
                                         id="email"
                                         name="email"
+                                        value="{{ old('email') }}"
                                         placeholder="alex@yourbusiness.com"
                                         required
-                                        class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                                        class="w-full rounded-lg border @error('email') border-rose-400 @else border-slate-300 @enderror px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600"
                                     >
+                                    @error('email')
+                                        <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="phone" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                                        Phone / WhatsApp <span class="text-slate-400 font-normal lowercase">(optional)</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="phone"
+                                        name="phone"
+                                        value="{{ old('phone') }}"
+                                        placeholder="+91 98765 43210"
+                                        class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600"
+                                    >
+                                    @error('phone')
+                                        <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label for="course_id" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                                        Related Course <span class="text-slate-400 font-normal lowercase">(optional)</span>
+                                    </label>
+                                    <select
+                                        id="course_id"
+                                        name="course_id"
+                                        class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600"
+                                    >
+                                        <option value="">-- General Platform Inquiry --</option>
+                                        @if(isset($courses))
+                                            @foreach($courses as $course)
+                                                <option value="{{ $course->id }}" {{ old('course_id') == $course->id ? 'selected' : '' }}>
+                                                    {{ $course->title }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    @error('course_id')
+                                        <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
+                                    @enderror
                                 </div>
                             </div>
 
                             <div>
                                 <label for="subject" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                                    Subject
+                                    Subject <span class="text-slate-400 font-normal lowercase">(optional)</span>
                                 </label>
                                 <input
                                     type="text"
                                     id="subject"
                                     name="subject"
-                                    placeholder="e.g. Inquiry regarding Course Waitlist"
-                                    required
-                                    class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                                    value="{{ old('subject') }}"
+                                    placeholder="e.g. Question about curriculum for local businesses"
+                                    class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600"
                                 >
+                                @error('subject')
+                                    <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
+                                @enderror
                             </div>
 
                             <div>
                                 <label for="message" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                                    Message
+                                    Message <span class="text-rose-500">*</span>
                                 </label>
                                 <textarea
                                     id="message"
@@ -89,16 +157,22 @@
                                     rows="5"
                                     placeholder="Tell us about your business, what challenges you are facing, or any questions you have..."
                                     required
-                                    class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                                ></textarea>
+                                    class="w-full rounded-lg border @error('message') border-rose-400 @else border-slate-300 @enderror px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600"
+                                >{{ old('message') }}</textarea>
+                                @error('message')
+                                    <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
+                                @enderror
                             </div>
 
                             <div>
                                 <button
                                     type="submit"
-                                    class="w-full sm:w-auto inline-flex items-center justify-center rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition"
+                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-7 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition cursor-pointer"
                                 >
-                                    Send Message
+                                    <span>Send Inquiry</span>
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                    </svg>
                                 </button>
                             </div>
                         </form>

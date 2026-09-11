@@ -247,30 +247,99 @@
         </div>
     </section>
 
-    <!-- SECTION 5: FEATURED COURSE -->
+    <!-- SECTION 5: FEATURED COURSES -->
     <section class="py-20 bg-white border-b border-slate-200">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="max-w-2xl mx-auto text-center mb-12">
-                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Flagship Program</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Flagship Curriculum</span>
                 <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-                    Featured Course
+                    Featured Marketing Courses
                 </h2>
                 <p class="mt-3 text-base text-slate-600">
-                    Our comprehensive step-by-step masterclass built specifically for time-constrained business operators.
+                    Comprehensive, step-by-step masterclasses built specifically for time-constrained business operators.
                 </p>
             </div>
 
-            <div class="max-w-3xl mx-auto">
-                <x-course-card
-                    title="Digital Marketing for Business Owners"
-                    description="Learn how to grow your business online with limited time and budget. Gain full control over your customer acquisition without depending entirely on expensive agencies."
-                    badge="Coming Soon"
-                    modules="6 Core Modules"
-                    audience="Small Business Owners & Startup Founders"
-                    :url="route('course.details')"
-                    :featured="true"
-                />
-            </div>
+            @if(isset($featuredCourses) && $featuredCourses->isNotEmpty())
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    @foreach($featuredCourses as $course)
+                        <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-md transition flex flex-col">
+                            @if($course->thumbnail)
+                                <img src="{{ Storage::url($course->thumbnail) }}"
+                                     alt="{{ $course->title }}"
+                                     class="h-48 w-full object-cover border-b border-slate-100">
+                            @else
+                                <div class="h-44 w-full bg-gradient-to-tr from-indigo-900 via-indigo-800 to-slate-900 p-6 flex flex-col justify-between border-b border-slate-100">
+                                    <span class="inline-flex self-start items-center rounded-full bg-indigo-500/20 px-2.5 py-1 text-[11px] font-semibold text-indigo-200 border border-indigo-500/30">
+                                        {{ $course->category?->name ?? 'Marketing' }}
+                                    </span>
+                                    <h3 class="text-lg font-bold text-white leading-snug line-clamp-2">
+                                        {{ $course->title }}
+                                    </h3>
+                                </div>
+                            @endif
+
+                            <div class="p-6 flex-1 flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-center justify-between gap-2 mb-2">
+                                        <span class="text-[11px] font-semibold text-indigo-600 uppercase tracking-wider">
+                                            {{ $course->category?->name ?? 'Course' }}
+                                        </span>
+                                        @if($course->is_free)
+                                            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                                                Free Track
+                                            </span>
+                                        @else
+                                            <div class="text-right">
+                                                @if($course->discount_price && $course->discount_price < $course->price)
+                                                    <span class="text-sm font-bold text-slate-900">₹{{ number_format($course->discount_price, 2) }}</span>
+                                                    <span class="text-xs text-slate-400 line-through ml-1">₹{{ number_format($course->price, 2) }}</span>
+                                                @else
+                                                    <span class="text-sm font-bold text-slate-900">₹{{ number_format($course->price, 2) }}</span>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <h3 class="text-base font-bold text-slate-900 hover:text-indigo-600 transition mb-2">
+                                        <a href="{{ route('courses.show', $course) }}">
+                                            {{ $course->title }}
+                                        </a>
+                                    </h3>
+
+                                    <p class="text-xs text-slate-600 leading-relaxed line-clamp-2 mb-4">
+                                        {{ $course->short_description }}
+                                    </p>
+                                </div>
+
+                                <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                                    <div class="text-[11px] text-slate-500 flex items-center gap-3">
+                                        <span>{{ $course->modules_count }} {{ Str::plural('Module', $course->modules_count) }}</span>
+                                        <span>&bull;</span>
+                                        <span>{{ $course->lessons_count }} {{ Str::plural('Lesson', $course->lessons_count) }}</span>
+                                    </div>
+
+                                    <a href="{{ route('courses.show', $course) }}" class="inline-flex items-center text-xs font-bold text-indigo-600 hover:text-indigo-700 transition">
+                                        Details &rarr;
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="max-w-3xl mx-auto">
+                    <x-course-card
+                        title="Digital Marketing for Business Owners"
+                        description="Learn how to grow your business online with limited time and budget. Gain full control over your customer acquisition without depending entirely on expensive agencies."
+                        badge="Flagship"
+                        modules="6 Core Modules"
+                        audience="Small Business Owners &amp; Startup Founders"
+                        :url="route('course.details')"
+                        :featured="true"
+                    />
+                </div>
+            @endif
         </div>
     </section>
 
@@ -404,6 +473,276 @@
                     <p class="text-xs text-slate-600 leading-relaxed">
                         No 1970s textbook models. Only modern tactics that work in today's digital market.
                     </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 7.5: TRUST & GUARANTEE STRIP -->
+    <section class="py-12 bg-indigo-900 text-white border-y border-indigo-800">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-center sm:text-left">
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 rounded-xl bg-indigo-800/80 border border-indigo-700 flex items-center justify-center shrink-0 text-amber-400">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-white">30-Day Guarantee</h4>
+                        <p class="text-xs text-indigo-200 mt-0.5">100% risk-free money back guarantee.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 rounded-xl bg-indigo-800/80 border border-indigo-700 flex items-center justify-center shrink-0 text-amber-400">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-white">Lifetime Access</h4>
+                        <p class="text-xs text-indigo-200 mt-0.5">Learn at your own pace, on any device.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 rounded-xl bg-indigo-800/80 border border-indigo-700 flex items-center justify-center shrink-0 text-amber-400">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-white">Verified Certificate</h4>
+                        <p class="text-xs text-indigo-200 mt-0.5">Shareable credential upon completion.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 rounded-xl bg-indigo-800/80 border border-indigo-700 flex items-center justify-center shrink-0 text-amber-400">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-white">Actionable Steps</h4>
+                        <p class="text-xs text-indigo-200 mt-0.5">Execute directly on your live business.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @if(isset($featuredReviews) && $featuredReviews->isNotEmpty())
+        <!-- SECTION 7.6: STUDENT TESTIMONIALS -->
+        <section class="py-20 bg-slate-50 border-b border-slate-200">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="max-w-2xl mx-auto text-center mb-12">
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Student Feedback</span>
+                    <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+                        Trusted by Ambitious Business Owners
+                    </h2>
+                    <p class="mt-3 text-base text-slate-600">
+                        Read how our practical marketing lessons are transforming customer acquisition for founders.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    @foreach($featuredReviews as $review)
+                        <div class="rounded-2xl border border-slate-200 bg-white p-7 shadow-xs flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center gap-1 text-amber-400 mb-3">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        <svg class="h-4 w-4 {{ $i <= $review->rating ? 'fill-current' : 'text-slate-200' }}" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                        </svg>
+                                    @endfor
+                                </div>
+                                <p class="text-xs sm:text-sm text-slate-700 leading-relaxed italic">
+                                    &ldquo;{{ Str::limit($review->review, 180) }}&rdquo;
+                                </p>
+                            </div>
+
+                            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <div class="text-xs font-bold text-slate-900">{{ $review->user->name }}</div>
+                                    <div class="text-[11px] text-slate-500">Student &bull; {{ Str::limit($review->course->title, 24) }}</div>
+                                </div>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    Verified Student
+                                </span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
+    <!-- SECTION 7.7: FREQUENTLY ASKED QUESTIONS (FAQ) -->
+    <section class="py-20 bg-white border-b border-slate-200">
+        <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Answers to Your Questions</span>
+                <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+                    Frequently Asked Questions
+                </h2>
+                <p class="mt-3 text-base text-slate-600">
+                    Everything you need to know before starting your learning journey with Marketian Mind.
+                </p>
+            </div>
+
+            <div class="space-y-4">
+                <details class="group rounded-xl border border-slate-200 bg-slate-50/50 p-5 open:bg-white open:shadow-xs transition" open>
+                    <summary class="flex cursor-pointer items-center justify-between font-bold text-slate-900 text-sm sm:text-base select-none">
+                        <span>Do I need prior marketing or technical experience?</span>
+                        <span class="ml-4 shrink-0 transition group-open:-rotate-180 text-indigo-600">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </span>
+                    </summary>
+                    <p class="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        None at all. Marketian Mind was specifically designed for craftspeople, local shop owners, solo founders, and service providers who have zero background in digital marketing or web development. Everything is explained in plain, jargon-free business English.
+                    </p>
+                </details>
+
+                <details class="group rounded-xl border border-slate-200 bg-slate-50/50 p-5 open:bg-white open:shadow-xs transition">
+                    <summary class="flex cursor-pointer items-center justify-between font-bold text-slate-900 text-sm sm:text-base select-none">
+                        <span>How much time do I need to commit each week?</span>
+                        <span class="ml-4 shrink-0 transition group-open:-rotate-180 text-indigo-600">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </span>
+                    </summary>
+                    <p class="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        Our courses are bite-sized and self-paced. Most lessons take 8 to 15 minutes each. We recommend dedicating 2 to 3 hours per week so you can watch a concept and immediately apply it to your business the same afternoon.
+                    </p>
+                </details>
+
+                <details class="group rounded-xl border border-slate-200 bg-slate-50/50 p-5 open:bg-white open:shadow-xs transition">
+                    <summary class="flex cursor-pointer items-center justify-between font-bold text-slate-900 text-sm sm:text-base select-none">
+                        <span>Will these strategies work for local or service businesses?</span>
+                        <span class="ml-4 shrink-0 transition group-open:-rotate-180 text-indigo-600">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </span>
+                    </summary>
+                    <p class="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        Yes! In fact, local service businesses (clinics, repair services, consulting firms, gyms, restaurants) often see the fastest return on investment because local customer acquisition is much less saturated than national eCommerce.
+                    </p>
+                </details>
+
+                <details class="group rounded-xl border border-slate-200 bg-slate-50/50 p-5 open:bg-white open:shadow-xs transition">
+                    <summary class="flex cursor-pointer items-center justify-between font-bold text-slate-900 text-sm sm:text-base select-none">
+                        <span>Do I receive a certificate when I finish?</span>
+                        <span class="ml-4 shrink-0 transition group-open:-rotate-180 text-indigo-600">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </span>
+                    </summary>
+                    <p class="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        Yes. Upon 100% completion of any course track, a verified digital certificate is automatically generated with a unique credential verification number that you can download as PDF or share on your professional profiles.
+                    </p>
+                </details>
+
+                <details class="group rounded-xl border border-slate-200 bg-slate-50/50 p-5 open:bg-white open:shadow-xs transition">
+                    <summary class="flex cursor-pointer items-center justify-between font-bold text-slate-900 text-sm sm:text-base select-none">
+                        <span>What is your refund policy if the course is not for me?</span>
+                        <span class="ml-4 shrink-0 transition group-open:-rotate-180 text-indigo-600">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </span>
+                    </summary>
+                    <p class="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        We offer an unconditional 30-day money-back guarantee on all paid courses. If you don't feel the curriculum gave you direct clarity on how to grow your business, simply contact our support team for a full refund.
+                    </p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 7.8: QUICK CONSULTATION / LEAD CAPTURE -->
+    <section class="py-16 bg-slate-50 border-b border-slate-200">
+        <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <div class="rounded-2xl border border-slate-200 bg-white p-8 sm:p-10 shadow-sm">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                    <div class="md:max-w-md">
+                        <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Personalized Guidance</span>
+                        <h3 class="text-2xl font-bold text-slate-900 mt-1">
+                            Not sure which course is right for your business?
+                        </h3>
+                        <p class="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+                            Share your current business situation and our educational team will recommend the exact training modules that fit your goals and timeline.
+                        </p>
+                        <div class="mt-4 flex items-center gap-4 text-xs font-semibold text-slate-500">
+                            <span class="flex items-center gap-1.5 text-emerald-600">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                No spam ever
+                            </span>
+                            <span class="flex items-center gap-1.5 text-emerald-600">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                1-business day reply
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 min-w-0 md:max-w-sm">
+                        @if(session('lead_success'))
+                            <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-xs font-semibold text-emerald-800">
+                                {{ session('lead_success') }}
+                            </div>
+                        @else
+                            <form action="{{ route('leads.store') }}" method="POST" class="space-y-3">
+                                @csrf
+                                <!-- Honeypot -->
+                                <div style="display:none !important;" aria-hidden="true">
+                                    <label for="website_quick">Website</label>
+                                    <input type="text" name="website" id="website_quick" tabindex="-1" autocomplete="off">
+                                </div>
+                                <input type="hidden" name="source" value="home_quick_inquiry">
+
+                                <div>
+                                    <input type="text"
+                                           name="name"
+                                           required
+                                           value="{{ old('name') }}"
+                                           placeholder="Your Name"
+                                           class="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600">
+                                </div>
+
+                                <div>
+                                    <input type="email"
+                                           name="email"
+                                           required
+                                           value="{{ old('email') }}"
+                                           placeholder="Your Business Email"
+                                           class="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600">
+                                </div>
+
+                                <div>
+                                    <textarea name="message"
+                                              rows="2"
+                                              required
+                                              placeholder="What business do you run & what is your primary goal?"
+                                              class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600">{{ old('message') }}</textarea>
+                                </div>
+
+                                <button type="submit"
+                                        class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition cursor-pointer">
+                                    Get Free Course Recommendation &rarr;
+                                </button>
+                            </form>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

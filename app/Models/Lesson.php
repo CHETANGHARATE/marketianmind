@@ -161,6 +161,22 @@ class Lesson extends Model
     }
 
     /**
+     * Get all downloadable resources and links attached to this lesson.
+     */
+    public function resources(): HasMany
+    {
+        return $this->hasMany(LessonResource::class)->orderBy('sort_order', 'asc');
+    }
+
+    /**
+     * Check if this lesson has any attached resources.
+     */
+    public function hasResources(): bool
+    {
+        return $this->resources()->exists();
+    }
+
+    /**
      * Check if a specific user has completed this lesson.
      */
     public function isCompletedBy(?User $user): bool

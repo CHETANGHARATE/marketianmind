@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role'])]
+#[Fillable(['name', 'email', 'password', 'role', 'referral_code'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -144,5 +144,113 @@ class User extends Authenticatable
     public function certificates(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Certificate::class);
+    }
+    /**
+     * Get all course reviews submitted by this user.
+     */
+    public function courseReviews(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(CourseReview::class);
+    }
+    /**
+     * Get all wishlist records for the user.
+     */
+    public function wishlists(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    /**
+     * Get all courses saved in the user's wishlist.
+     */
+    public function wishlistCourses(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Course::class, 'wishlists')
+            ->withTimestamps();
+    }
+
+    /**
+     * Check if a specific course is in the user's wishlist.
+     */
+    public function hasInWishlist(Course $course): bool
+    {
+        return $this->wishlists()->where('course_id', $course->id)->exists();
+    }
+
+    /**
+     * Add a course to the user's wishlist.
+     */
+    public function addToWishlist(Course $course): Wishlist
+    {
+        return $this->wishlists()->firstOrCreate(['course_id' => $course->id]);
+    }
+
+    /**
+     * Remove a course from the user's wishlist.
+     */
+    public function removeFromWishlist(Course $course): bool
+    {
+        return (bool) $this->wishlists()->where('course_id', $course->id)->delete();
+    }
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if (empty($user->referral_code)) {
+                $user->referral_code = static::generateUniqueReferralCode();
+            }
+        });
+    }
+
+    /**
+     * Generate a collision-resistant referral code.
+     */
+    public static function generateUniqueReferralCode(): string
+    {
+        do {
+            $code = 'MM' . strtoupper(\Illuminate\Support\Str::random(6));
+        } while (static::where('referral_code', $code)->exists());
+
+        return $code;
+    }
+
+    /**
+     * Get or generate the referral code for this user.
+     */
+    public function getReferralCode(): string
+    {
+        if (empty($this->referral_code)) {
+            $this->referral_code = static::generateUniqueReferralCode();
+            $this->saveQuietly();
+        }
+
+        return $this->referral_code;
+    }
+
+    /**
+     * Get the user's public referral URL.
+     */
+    public function referralUrl(): string
+    {
+        return route('referral.capture', ['code' => $this->getReferralCode()]);
+    }
+
+    /**
+     * Referrals where this user was the referrer.
+     */
+    public function referrals(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Referral::class, 'referrer_id');
+    }
+
+    /**
+     * Referral record where this user was the referred student.
+     */
+    public function referralAttribution(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Referral::class, 'referred_id');
     }
 }

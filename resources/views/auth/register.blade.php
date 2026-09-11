@@ -111,6 +111,35 @@
                     @enderror
                 </div>
 
+                @php
+                    $referralCode = old('ref', request('ref') ?? session('referral_code') ?? request()->cookie(\App\Services\ReferralService::COOKIE_NAME));
+                @endphp
+
+                <!-- Referral Code (Optional) -->
+                <div>
+                    <label for="ref" class="block text-sm font-semibold text-slate-800">
+                        Referral Code <span class="text-xs font-normal text-slate-500">(Optional)</span>
+                    </label>
+                    <div class="mt-1.5 relative">
+                        <input
+                            id="ref"
+                            type="text"
+                            name="ref"
+                            value="{{ $referralCode }}"
+                            placeholder="e.g. MM123XYZ"
+                            class="block w-full rounded-lg border border-slate-300 focus:border-indigo-600 focus:ring-indigo-600 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 uppercase tracking-wide transition"
+                        />
+                        @if(!empty($referralCode))
+                            <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-xs font-medium text-emerald-600 pointer-events-none">
+                                <svg class="w-4 h-4 mr-1 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Applied
+                            </span>
+                        @endif
+                    </div>
+                </div>
+
                 <!-- Reassuring Note -->
                 <div class="pt-2">
                     <p class="text-xs text-slate-500 leading-relaxed">
