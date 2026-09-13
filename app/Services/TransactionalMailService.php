@@ -70,6 +70,14 @@ class TransactionalMailService
     }
 
     /**
+     * Send student learning inactivity reminder email.
+     */
+    public function sendStudentInactivity(User $user, Course $course, ?\App\Models\Lesson $nextLesson = null): bool
+    {
+        return $this->safelySend($user->email, new \App\Mail\StudentInactivityMail($user, $course, $nextLesson));
+    }
+
+    /**
      * Send test email to verify SMTP configuration.
      */
     public function sendTestMail(string $toEmail): bool

@@ -1,2 +1,17 @@
 User-agent: *
-Disallow:
+Disallow: /admin/
+Disallow: /student/
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /payment/
+Disallow: /webhooks/
+Disallow: /ref/
+Disallow: /login
+Disallow: /register
+Disallow: /password/
+
+Allow: /
+Allow: /build/
+Allow: /storage/
+
+Sitemap: https://marketianmind.com/sitemap.xml

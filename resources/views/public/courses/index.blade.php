@@ -23,7 +23,7 @@
     <!-- Course Catalog Section -->
     <section class="py-12 bg-white min-h-screen">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-            <!-- Search & Filters Bar (No JavaScript Required) -->
+            <!-- Advanced Search & Discovery Form -->
             <div class="rounded-2xl border border-slate-200/90 bg-slate-50/70 p-5 sm:p-6 shadow-xs">
                 <form method="GET" action="{{ route('courses') }}" class="space-y-4">
                     <!-- Top Search Row -->
@@ -38,9 +38,18 @@
                                 type="text"
                                 name="q"
                                 value="{{ $searchQuery }}"
-                                placeholder="Search courses by topic, skill, or instructor..."
-                                class="block w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 shadow-2xs transition"
+                                placeholder="Search courses by title, topic, instructor, or category..."
+                                class="block w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-9 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 shadow-2xs transition"
                             />
+                            @if($searchQuery !== '')
+                                <a
+                                    href="{{ request()->fullUrlWithQuery(['q' => null, 'page' => null]) }}"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 transition text-sm"
+                                    title="Clear search keyword"
+                                >
+                                    &times;
+                                </a>
+                            @endif
                         </div>
 
                         <div class="flex items-center gap-2">
@@ -56,14 +65,14 @@
                                     href="{{ route('courses') }}"
                                     class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition shrink-0"
                                 >
-                                    Reset
+                                    Reset All
                                 </a>
                             @endif
                         </div>
                     </div>
 
-                    <!-- Filter Controls Row (Category, Pricing, Sort) -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-200/80 text-xs">
+                    <!-- Filter Controls Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-slate-200/80 text-xs">
                         <!-- Category Filter -->
                         <div>
                             <label for="category" class="block font-semibold text-slate-700 mb-1">
@@ -84,7 +93,7 @@
                             </select>
                         </div>
 
-                        <!-- Price / Type Filter -->
+                        <!-- Course Type Filter -->
                         <div>
                             <label for="type" class="block font-semibold text-slate-700 mb-1">
                                 Course Type
@@ -101,8 +110,99 @@
                             </select>
                         </div>
 
-                        <!-- Sort Options -->
+                        <!-- Minimum Rating Filter -->
                         <div>
+                            <label for="rating" class="block font-semibold text-slate-700 mb-1">
+                                Student Rating
+                            </label>
+                            <select
+                                id="rating"
+                                name="rating"
+                                onchange="this.form.submit()"
+                                class="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 shadow-2xs transition"
+                            >
+                                <option value="">All Ratings</option>
+                                <option value="4.5" {{ $selectedRating == 4.5 ? 'selected' : '' }}>★ 4.5 &amp; above</option>
+                                <option value="4.0" {{ $selectedRating == 4.0 ? 'selected' : '' }}>★ 4.0 &amp; above</option>
+                                <option value="3.0" {{ $selectedRating == 3.0 ? 'selected' : '' }}>★ 3.0 &amp; above</option>
+                            </select>
+                        </div>
+
+                        <!-- Duration Filter -->
+                        <div>
+                            <label for="duration" class="block font-semibold text-slate-700 mb-1">
+                                Duration
+                            </label>
+                            <select
+                                id="duration"
+                                name="duration"
+                                onchange="this.form.submit()"
+                                class="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 shadow-2xs transition"
+                            >
+                                <option value="">All Durations</option>
+                                <option value="short" {{ $selectedDuration === 'short' ? 'selected' : '' }}>Short (&lt; 3 Hours)</option>
+                                <option value="medium" {{ $selectedDuration === 'medium' ? 'selected' : '' }}>Medium (3–10 Hours)</option>
+                                <option value="long" {{ $selectedDuration === 'long' ? 'selected' : '' }}>In-depth (10+ Hours)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Secondary Controls: Price Range, Featured Toggle & Sort -->
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-3 border-t border-slate-200/80 text-xs items-end">
+                        <!-- Price Range (Min & Max) -->
+                        <div class="sm:col-span-6 lg:col-span-5">
+                            <label class="block font-semibold text-slate-700 mb-1">
+                                Effective Price Range (₹)
+                            </label>
+                            <div class="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    name="min_price"
+                                    value="{{ $minPrice !== null ? (int) $minPrice : '' }}"
+                                    placeholder="Min ₹"
+                                    min="0"
+                                    step="100"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 shadow-2xs"
+                                />
+                                <span class="text-slate-400 font-medium">to</span>
+                                <input
+                                    type="number"
+                                    name="max_price"
+                                    value="{{ $maxPrice !== null ? (int) $maxPrice : '' }}"
+                                    placeholder="Max ₹"
+                                    min="0"
+                                    step="100"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 shadow-2xs"
+                                />
+                                <button
+                                    type="submit"
+                                    class="inline-flex items-center rounded-xl bg-slate-200 hover:bg-slate-300 px-3 py-2 font-bold text-slate-700 transition cursor-pointer shrink-0"
+                                    title="Apply price filter"
+                                >
+                                    Apply
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Featured Toggle -->
+                        <div class="sm:col-span-6 lg:col-span-3 flex items-center h-9">
+                            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    name="featured"
+                                    value="1"
+                                    {{ $selectedFeatured ? 'checked' : '' }}
+                                    onchange="this.form.submit()"
+                                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 h-4 w-4"
+                                />
+                                <span class="text-xs font-semibold text-slate-700">
+                                    Featured Programs Only
+                                </span>
+                            </label>
+                        </div>
+
+                        <!-- Sort Options -->
+                        <div class="sm:col-span-12 lg:col-span-4">
                             <label for="sort" class="block font-semibold text-slate-700 mb-1">
                                 Sort By
                             </label>
@@ -112,11 +212,13 @@
                                 onchange="this.form.submit()"
                                 class="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 shadow-2xs transition"
                             >
+                                <option value="relevance" {{ $selectedSort === 'relevance' ? 'selected' : '' }}>Relevance</option>
                                 <option value="newest" {{ $selectedSort === 'newest' ? 'selected' : '' }}>Newest Additions</option>
                                 <option value="oldest" {{ $selectedSort === 'oldest' ? 'selected' : '' }}>Oldest First</option>
                                 <option value="price_low" {{ $selectedSort === 'price_low' ? 'selected' : '' }}>Price: Low to High</option>
                                 <option value="price_high" {{ $selectedSort === 'price_high' ? 'selected' : '' }}>Price: High to Low</option>
-                                <option value="featured" {{ $selectedSort === 'featured' ? 'selected' : '' }}>Featured First</option>
+                                <option value="rating" {{ $selectedSort === 'rating' ? 'selected' : '' }}>Highest Rated</option>
+                                <option value="popular" {{ $selectedSort === 'popular' ? 'selected' : '' }}>Most Popular (Enrollments)</option>
                             </select>
                         </div>
                     </div>
@@ -141,34 +243,113 @@
                 </div>
 
                 @if($hasActiveFilters)
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-slate-400 font-medium">Active filters:</span>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="text-slate-400 font-medium mr-1">Active filters:</span>
 
                         @if($searchQuery !== '')
-                            <span class="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-700 border border-indigo-100">
-                                Keyword: "{{ $searchQuery }}"
-                            </span>
+                            <a
+                                href="{{ request()->fullUrlWithQuery(['q' => null, 'page' => null]) }}"
+                                class="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-700 border border-indigo-100 hover:bg-indigo-100 transition"
+                                title="Remove keyword filter"
+                            >
+                                <span>Keyword: "{{ $searchQuery }}"</span>
+                                <span class="text-indigo-400 hover:text-indigo-900">&times;</span>
+                            </a>
                         @endif
 
                         @if($selectedCategory)
-                            <span class="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-700 border border-indigo-100">
-                                Category: {{ $selectedCategory->name }}
-                            </span>
+                            <a
+                                href="{{ request()->fullUrlWithQuery(['category' => null, 'page' => null]) }}"
+                                class="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-700 border border-indigo-100 hover:bg-indigo-100 transition"
+                                title="Remove category filter"
+                            >
+                                <span>Category: {{ $selectedCategory->name }}</span>
+                                <span class="text-indigo-400 hover:text-indigo-900">&times;</span>
+                            </a>
                         @endif
 
                         @if($selectedType !== 'all')
-                            <span class="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-700 border border-indigo-100">
-                                Type: {{ ucfirst($selectedType) }}
-                            </span>
+                            <a
+                                href="{{ request()->fullUrlWithQuery(['type' => null, 'page' => null]) }}"
+                                class="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-700 border border-indigo-100 hover:bg-indigo-100 transition"
+                                title="Remove type filter"
+                            >
+                                <span>Type: {{ ucfirst($selectedType) }}</span>
+                                <span class="text-indigo-400 hover:text-indigo-900">&times;</span>
+                            </a>
                         @endif
 
-                        @if($selectedSort !== 'newest')
-                            <span class="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700 border border-slate-200">
-                                Sort: {{ ucfirst(str_replace('_', ' ', $selectedSort)) }}
-                            </span>
+                        @if($minPrice !== null || $maxPrice !== null)
+                            <a
+                                href="{{ request()->fullUrlWithQuery(['min_price' => null, 'max_price' => null, 'page' => null]) }}"
+                                class="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-700 border border-indigo-100 hover:bg-indigo-100 transition"
+                                title="Remove price filter"
+                            >
+                                <span>
+                                    Price:
+                                    @if($minPrice !== null && $maxPrice !== null)
+                                        ₹{{ number_format($minPrice, 0) }} - ₹{{ number_format($maxPrice, 0) }}
+                                    @elseif($minPrice !== null)
+                                        Min ₹{{ number_format($minPrice, 0) }}
+                                    @else
+                                        Max ₹{{ number_format($maxPrice, 0) }}
+                                    @endif
+                                </span>
+                                <span class="text-indigo-400 hover:text-indigo-900">&times;</span>
+                            </a>
                         @endif
 
-                        <a href="{{ route('courses') }}" class="text-indigo-600 hover:text-indigo-700 font-bold underline ml-1">
+                        @if($selectedRating !== null)
+                            <a
+                                href="{{ request()->fullUrlWithQuery(['rating' => null, 'page' => null]) }}"
+                                class="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800 border border-amber-200 hover:bg-amber-100 transition"
+                                title="Remove rating filter"
+                            >
+                                <span>Rating: ★ {{ $selectedRating }}+</span>
+                                <span class="text-amber-500 hover:text-amber-900">&times;</span>
+                            </a>
+                        @endif
+
+                        @if($selectedDuration !== null)
+                            <a
+                                href="{{ request()->fullUrlWithQuery(['duration' => null, 'page' => null]) }}"
+                                class="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-700 border border-indigo-100 hover:bg-indigo-100 transition"
+                                title="Remove duration filter"
+                            >
+                                <span>
+                                    Duration:
+                                    {{ match($selectedDuration) { 'short' => '< 3 Hours', 'medium' => '3–10 Hours', 'long' => '10+ Hours', default => $selectedDuration } }}
+                                </span>
+                                <span class="text-indigo-400 hover:text-indigo-900">&times;</span>
+                            </a>
+                        @endif
+
+                        @if($selectedFeatured)
+                            <a
+                                href="{{ request()->fullUrlWithQuery(['featured' => null, 'page' => null]) }}"
+                                class="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-700 border border-indigo-100 hover:bg-indigo-100 transition"
+                                title="Remove featured filter"
+                            >
+                                <span>Featured Only</span>
+                                <span class="text-indigo-400 hover:text-indigo-900">&times;</span>
+                            </a>
+                        @endif
+
+                        @php
+                            $defaultSort = $searchQuery !== '' ? 'relevance' : 'newest';
+                        @endphp
+                        @if($selectedSort !== $defaultSort)
+                            <a
+                                href="{{ request()->fullUrlWithQuery(['sort' => null, 'page' => null]) }}"
+                                class="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700 border border-slate-200 hover:bg-slate-200 transition"
+                                title="Reset sorting"
+                            >
+                                <span>Sort: {{ ucfirst(str_replace('_', ' ', $selectedSort)) }}</span>
+                                <span class="text-slate-400 hover:text-slate-800">&times;</span>
+                            </a>
+                        @endif
+
+                        <a href="{{ route('courses') }}" class="text-indigo-600 hover:text-indigo-700 font-bold underline ml-1 text-xs">
                             Clear all
                         </a>
                     </div>
@@ -212,6 +393,11 @@
                                             Enrolled
                                         </span>
                                     @endif
+                                    @if($course->hasActiveOffer())
+                                        <span class="inline-flex items-center rounded-md bg-amber-500 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-950 shadow-xs">
+                                            {{ $course->currentOffer()->displayBadge() }}
+                                        </span>
+                                    @endif
                                 </div>
 
                                 <!-- Price Pill -->
@@ -219,6 +405,14 @@
                                     @if($course->is_free)
                                         <span class="inline-flex items-center rounded-full bg-emerald-600 px-3 py-1 text-xs font-black text-white shadow-sm">
                                             FREE
+                                        </span>
+                                    @elseif($course->hasActiveOffer())
+                                        @php
+                                            $finalPrice = $course->finalPrice();
+                                        @endphp
+                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-xs font-black text-slate-950 shadow-sm">
+                                            <span>₹{{ number_format($finalPrice, 0) }}</span>
+                                            <span class="text-slate-800 line-through text-[11px]">₹{{ number_format($course->price, 0) }}</span>
                                         </span>
                                     @elseif($course->discount_price && $course->discount_price < $course->price)
                                         <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/90 backdrop-blur-xs px-3 py-1 text-xs font-bold text-white shadow-sm">
@@ -235,19 +429,30 @@
 
                             <!-- Course Body -->
                             <div class="flex flex-1 flex-col p-6">
-                                <div class="flex items-center gap-2 mb-2 text-xs">
-                                    @if($course->category)
-                                        <span class="font-bold text-indigo-600 uppercase tracking-wider text-[10px]">
-                                            {{ $course->category->name }}
+                                <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs">
+                                    <div class="flex items-center gap-1.5">
+                                        @if($course->category)
+                                            <span class="font-bold text-indigo-600 uppercase tracking-wider text-[10px]">
+                                                {{ $course->category->name }}
+                                            </span>
+                                            <span class="text-slate-300">&bull;</span>
+                                        @endif
+                                        <span class="text-slate-500">
+                                            {{ $course->modules_count }} {{ \Illuminate\Support\Str::plural('Module', $course->modules_count) }}
                                         </span>
-                                        <span class="text-slate-300">&bull;</span>
-                                    @endif
-                                    <span class="text-slate-500">
-                                        {{ $course->modules_count }} {{ \Illuminate\Support\Str::plural('Module', $course->modules_count) }}
-                                    </span>
-                                    @if($course->estimated_duration)
-                                        <span class="text-slate-300">&bull;</span>
-                                        <span class="text-slate-500">{{ $course->estimated_duration }}</span>
+                                        @if($course->estimated_duration)
+                                            <span class="text-slate-300">&bull;</span>
+                                            <span class="text-slate-500">{{ $course->estimated_duration }}</span>
+                                        @endif
+                                    </div>
+
+                                    <!-- Rating Star if available -->
+                                    @if($course->average_rating)
+                                        <div class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                            <span>★</span>
+                                            <span>{{ number_format($course->average_rating, 1) }}</span>
+                                            <span class="text-amber-500/80 font-normal">({{ $course->reviews_count }})</span>
+                                        </div>
                                     @endif
                                 </div>
 
@@ -262,9 +467,13 @@
                                 </p>
 
                                 <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                                    <span class="text-slate-400 text-[11px] truncate max-w-[140px]">
-                                        By {{ $course->instructor_name ?? 'Marketian Mind Faculty' }}
-                                    </span>
+                                    <div class="truncate max-w-[170px] text-slate-400 text-[11px]">
+                                        <span>By {{ $course->instructor_name ?? 'Marketian Mind Faculty' }}</span>
+                                        @if($course->active_enrollments_count > 0)
+                                            <span class="text-slate-300">&bull;</span>
+                                            <span class="text-slate-500 font-medium">{{ $course->active_enrollments_count }} {{ \Illuminate\Support\Str::plural('student', $course->active_enrollments_count) }}</span>
+                                        @endif
+                                    </div>
 
                                     @if($isCompleted)
                                         <a href="{{ route('student.courses.show', $course) }}" class="inline-flex items-center gap-1 font-bold text-emerald-600 hover:text-emerald-700 transition">

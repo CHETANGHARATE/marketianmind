@@ -12,7 +12,12 @@
                     </svg>
                     Authoritative Analytics Engine
                 </span>
-                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Business Reports &amp; Analytics</h1>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">
+                    Business Reports &amp; Analytics
+                    @if(isset($title) && $title !== 'Business Reports & Analytics')
+                        <span class="text-slate-400 font-normal text-lg sm:text-xl block sm:inline sm:ml-2">&bull; {{ $title }}</span>
+                    @endif
+                </h1>
                 <p class="text-sm text-slate-500 mt-1">
                     Showing data for <span class="font-semibold text-slate-800">{{ $dateFilter['label'] }}</span>
                 </p>

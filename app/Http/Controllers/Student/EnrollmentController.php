@@ -58,8 +58,14 @@ class EnrollmentController extends Controller
             ]);
         }
 
-        $user->notify(new \App\Notifications\CourseEnrollmentNotification($course));
-        app(\App\Services\TransactionalMailService::class)->sendCourseEnrollment($user, $course);
+        app(\App\Services\EngagementService::class)->handleEnrollment($user, $course, false);
+
+        app(\App\Services\MarketingAutomationService::class)->dispatchTrigger(
+            \App\Enums\AutomationTrigger::COURSE_ENROLLED,
+            $user,
+            ['course_id' => $course->id],
+            'enrollment_' . $user->id . '_' . $course->id
+        );
 
         return redirect()
             ->route('student.courses.show', $course)

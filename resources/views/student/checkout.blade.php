@@ -5,9 +5,19 @@
     <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <!-- Back link -->
         <div class="mb-8">
-            <a href="{{ route('courses.show', $course) }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition">
-                &larr; Back to Course Overview
-            </a>
+            @if($order->isBundleOrder() && $order->bundle)
+                <a href="{{ route('bundles.show', $order->bundle) }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition">
+                    &larr; Back to Bundle Overview
+                </a>
+            @elseif($course)
+                <a href="{{ route('courses.show', $course) }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition">
+                    &larr; Back to Course Overview
+                </a>
+            @else
+                <a href="{{ route('courses.index') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition">
+                    &larr; Back to Catalog
+                </a>
+            @endif
         </div>
 
         <!-- Session Status & Alerts -->
@@ -50,34 +60,64 @@
                     <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-600 mb-2">
                         <span>Secure Checkout</span>
                         <span>&bull;</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold {{ $order->isBundleOrder() ? 'bg-amber-100 text-amber-800' : 'bg-indigo-100 text-indigo-800' }}">
+                            {{ $order->productTypeLabel() }}
+                        </span>
+                        <span>&bull;</span>
                         <span class="text-slate-400">Order #{{ $order->order_number }}</span>
                     </div>
 
                     <h1 class="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-                        {{ $course->title }}
+                        {{ $order->productTitle() }}
                     </h1>
 
-                    @if($course->short_description)
-                        <p class="mt-3 text-sm text-slate-600 leading-relaxed">
-                            {{ $course->short_description }}
-                        </p>
-                    @endif
+                    @if($order->isBundleOrder() && $order->bundle)
+                        @if($order->bundle->short_description)
+                            <p class="mt-3 text-sm text-slate-600 leading-relaxed">
+                                {{ $order->bundle->short_description }}
+                            </p>
+                        @endif
 
-                    <div class="mt-6 pt-6 border-t border-slate-100 flex items-center gap-4 text-xs text-slate-500">
-                        @if($course->level)
-                            <span class="inline-flex items-center gap-1">
-                                <span class="font-semibold text-slate-700">Level:</span> {{ $course->level }}
-                            </span>
+                        <!-- Bundle Included Courses Box -->
+                        <div class="mt-6 pt-6 border-t border-slate-100">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-3">
+                                Included Courses ({{ $order->bundle->publishedCourses->count() }})
+                            </h3>
+                            <div class="space-y-2.5">
+                                @foreach($order->bundle->publishedCourses as $bCourse)
+                                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                                        <div class="flex items-center gap-2.5">
+                                            <span class="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] flex-shrink-0">&check;</span>
+                                            <span class="font-semibold text-slate-800">{{ $bCourse->title }}</span>
+                                        </div>
+                                        <span class="text-slate-500 font-medium whitespace-nowrap">{{ $bCourse->formattedPrice() }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @elseif($course)
+                        @if($course->short_description)
+                            <p class="mt-3 text-sm text-slate-600 leading-relaxed">
+                                {{ $course->short_description }}
+                            </p>
                         @endif
-                        @if($course->duration)
+
+                        <div class="mt-6 pt-6 border-t border-slate-100 flex items-center gap-4 text-xs text-slate-500">
+                            @if($course->level)
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="font-semibold text-slate-700">Level:</span> {{ $course->level }}
+                                </span>
+                            @endif
+                            @if($course->duration)
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="font-semibold text-slate-700">Duration:</span> {{ $course->duration }}
+                                </span>
+                            @endif
                             <span class="inline-flex items-center gap-1">
-                                <span class="font-semibold text-slate-700">Duration:</span> {{ $course->duration }}
+                                <span class="font-semibold text-slate-700">Access:</span> Lifetime
                             </span>
-                        @endif
-                        <span class="inline-flex items-center gap-1">
-                            <span class="font-semibold text-slate-700">Access:</span> Lifetime
-                        </span>
-                    </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Trust Guarantees -->
@@ -133,7 +173,11 @@
                         <span>Promotional Coupon</span>
                     </h3>
 
-                    @if($order->hasCoupon())
+                    @if($order->hasOffer() && ! ($order->offer?->allow_coupons))
+                        <div class="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                            <span class="font-bold">Promotional Offer Active:</span> Coupons cannot be combined with {{ $order->offer?->name ?? 'promotional' }} pricing.
+                        </div>
+                    @elseif($order->hasCoupon())
                         <div class="flex items-center justify-between p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl">
                             <div>
                                 <div class="flex items-center gap-2">
@@ -168,7 +212,11 @@
                 </div>
 
                 <div class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm sticky top-6">
-                    @if($course->thumbnailUrl())
+                    @if($order->isBundleOrder() && $order->bundle && $order->bundle->thumbnail_url)
+                        <div class="aspect-video rounded-xl overflow-hidden mb-6 bg-slate-100">
+                            <img src="{{ $order->bundle->thumbnail_url }}" alt="{{ $order->bundle->title }}" class="h-full w-full object-cover">
+                        </div>
+                    @elseif($course && $course->thumbnailUrl())
                         <div class="aspect-video rounded-xl overflow-hidden mb-6 bg-slate-100">
                             <img src="{{ $course->thumbnailUrl() }}" alt="{{ $course->title }}" class="h-full w-full object-cover">
                         </div>
@@ -179,15 +227,35 @@
                     </h2>
 
                     <div class="py-4 space-y-3 text-sm border-b border-slate-100">
-                        <div class="flex items-center justify-between text-slate-600">
-                            <span>Standard Tuition</span>
-                            <span>₹{{ number_format($course->price, 2) }}</span>
-                        </div>
+                        @if($order->isBundleOrder() && $order->bundle)
+                            <div class="flex items-center justify-between text-slate-600">
+                                <span>Total Value of Included Courses</span>
+                                <span>{{ $order->bundle->formattedIndividualCoursesTotal() }}</span>
+                            </div>
+                            @if($order->bundle->savings() > 0)
+                                <div class="flex items-center justify-between text-emerald-600 font-medium">
+                                    <span>Bundle Package Discount ({{ $order->bundle->savingsPercentage() }}% off)</span>
+                                    <span>- {{ $order->bundle->formattedSavings() }}</span>
+                                </div>
+                            @endif
+                        @elseif($course)
+                            <div class="flex items-center justify-between text-slate-600">
+                                <span>Standard Tuition</span>
+                                <span>₹{{ number_format($course->price, 2) }}</span>
+                            </div>
 
-                        @if($course->hasDiscount())
-                            <div class="flex items-center justify-between text-emerald-600 font-medium">
-                                <span>Founder Discount</span>
-                                <span>- ₹{{ number_format($course->price - $course->discount_price, 2) }}</span>
+                            @if($course->hasDiscount())
+                                <div class="flex items-center justify-between text-emerald-600 font-medium">
+                                    <span>Founder Discount</span>
+                                    <span>- ₹{{ number_format($course->price - $course->discount_price, 2) }}</span>
+                                </div>
+                            @endif
+                        @endif
+
+                        @if($order->hasOffer() && $order->offer_discount_amount > 0)
+                            <div class="flex items-center justify-between text-amber-600 font-medium">
+                                <span>Promotional Offer ({{ $order->offer?->name ?? 'Special Offer' }})</span>
+                                <span>- {{ $order->formattedOfferDiscountAmount() }}</span>
                             </div>
                         @endif
 
@@ -256,7 +324,7 @@
             amount: "{{ $order->amount }}",
             currency: "{{ $order->currency }}",
             name: "Marketian Mind",
-            description: "{{ addslashes($course->title) }}",
+            description: "{{ addslashes($order->productTitle()) }}",
             order_id: "{{ $order->razorpay_order_id }}",
             prefill: {
                 name: "{{ addslashes(auth()->user()->name) }}",

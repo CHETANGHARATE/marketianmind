@@ -13,6 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'user_id',
     'course_id',
+    'bundle_id',
+    'offer_id',
+    'offer_discount_amount',
     'coupon_id',
     'coupon_code',
     'order_number',
@@ -50,6 +53,7 @@ class Order extends Model
         return [
             'status' => OrderStatus::class,
             'amount' => 'integer',
+            'offer_discount_amount' => 'integer',
             'paid_at' => 'datetime',
             'expires_at' => 'datetime',
             'metadata' => 'array',
@@ -70,6 +74,50 @@ class Order extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    /**
+     * Get the bundle purchased in this order, if applicable.
+     */
+    public function bundle(): BelongsTo
+    {
+        return $this->belongsTo(Bundle::class);
+    }
+
+    /**
+     * Check if this order is for a bundle.
+     */
+    public function isBundleOrder(): bool
+    {
+        return ! is_null($this->bundle_id);
+    }
+
+    /**
+     * Check if this order is for a single course.
+     */
+    public function isCourseOrder(): bool
+    {
+        return ! is_null($this->course_id) && is_null($this->bundle_id);
+    }
+
+    /**
+     * Get the human-readable product title for this order.
+     */
+    public function productTitle(): string
+    {
+        if ($this->isBundleOrder()) {
+            return $this->bundle?->title ?? 'Course Bundle';
+        }
+
+        return $this->course?->title ?? 'Course';
+    }
+
+    /**
+     * Get the product type label for display.
+     */
+    public function productTypeLabel(): string
+    {
+        return $this->isBundleOrder() ? 'Course Bundle' : 'Single Course';
     }
 
     /**
@@ -222,5 +270,55 @@ class Order extends Model
     public function formattedDiscountAmount(): string
     {
         return '₹' . number_format($this->discountAmountInRupees(), 2);
+    }
+
+    /**
+     * Get the promotional offer applied to this order, if any.
+     */
+    public function offer(): BelongsTo
+    {
+        return $this->belongsTo(Offer::class);
+    }
+
+    /**
+     * Check if a promotional offer is applied.
+     */
+    public function hasOffer(): bool
+    {
+        return ! is_null($this->offer_id) || ($this->offer_discount_amount ?? 0) > 0;
+    }
+
+    /**
+     * Get promotional offer discount amount in INR Rupees.
+     */
+    public function offerDiscountAmountInRupees(): float
+    {
+        return round(($this->offer_discount_amount ?? 0) / 100, 2);
+    }
+
+    /**
+     * Formatted offer discount amount.
+     */
+    public function formattedOfferDiscountAmount(): string
+    {
+        return '₹' . number_format($this->offerDiscountAmountInRupees(), 2);
+    }
+
+    /**
+     * Get total combined savings (offer discount + coupon discount) in INR Rupees.
+     */
+    public function totalSavingsInRupees(): float
+    {
+        $offerDisc = $this->offer_discount_amount ?? 0;
+        $couponDisc = $this->discount_amount ?? 0;
+        return round(($offerDisc + $couponDisc) / 100, 2);
+    }
+
+    /**
+     * Formatted total savings.
+     */
+    public function formattedTotalSavings(): string
+    {
+        return '₹' . number_format($this->totalSavingsInRupees(), 2);
     }
 }

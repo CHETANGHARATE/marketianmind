@@ -107,31 +107,70 @@
                 </div>
             </div>
 
-            <!-- Course Information Card -->
+            <!-- Product (Course or Bundle) Information Card -->
             <div class="rounded-xl bg-slate-950/50 p-5 border border-slate-800">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Purchased Course</span>
-                    <a href="{{ route('admin.courses.edit', $order->course) }}" class="text-xs font-semibold text-amber-400 hover:text-amber-300 transition">
-                        Edit Course &rarr;
-                    </a>
-                </div>
-                <div>
-                    <p class="font-bold text-white text-sm">{{ $order->course->title }}</p>
-                    <p class="text-slate-400 text-xs mt-0.5">Slug: {{ $order->course->slug }}</p>
-                </div>
-                <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-                    <span>Category: {{ $order->course->category?->name ?? 'Uncategorized' }}</span>
-                    <span>Catalog Price: ₹{{ number_format($order->course->price, 2) }}</span>
-                </div>
+                @if($order->isBundleOrder() && $order->bundle)
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Purchased Bundle</span>
+                        <a href="{{ route('admin.bundles.edit', $order->bundle) }}" class="text-xs font-semibold text-amber-400 hover:text-amber-300 transition">
+                            Edit Bundle &rarr;
+                        </a>
+                    </div>
+                    <div>
+                        <p class="font-bold text-white text-sm">{{ $order->bundle->title }}</p>
+                        <p class="text-slate-400 text-xs mt-0.5">Slug: {{ $order->bundle->slug }}</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Includes {{ $order->bundle->courses->count() }} Courses</span>
+                        <span>Package Tuition: {{ $order->bundle->formattedPrice() }}</span>
+                    </div>
+                @elseif($order->course)
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Purchased Course</span>
+                        <a href="{{ route('admin.courses.edit', $order->course) }}" class="text-xs font-semibold text-amber-400 hover:text-amber-300 transition">
+                            Edit Course &rarr;
+                        </a>
+                    </div>
+                    <div>
+                        <p class="font-bold text-white text-sm">{{ $order->course->title }}</p>
+                        <p class="text-slate-400 text-xs mt-0.5">Slug: {{ $order->course->slug }}</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Category: {{ $order->course->category?->name ?? 'Uncategorized' }}</span>
+                        <span>Catalog Price: ₹{{ number_format($order->course->price, 2) }}</span>
+                    </div>
+                @else
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Item</span>
+                    </div>
+                    <p class="font-bold text-white text-sm">{{ $order->productTitle() }}</p>
+                @endif
             </div>
         </div>
 
         <!-- Course Access & Enrollment State -->
         <div class="py-6 border-b border-slate-800 text-xs">
             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                Course Enrollment Status
+                {{ $order->isBundleOrder() ? 'Bundle Course Enrollments' : 'Course Enrollment Status' }}
             </h3>
-            @if($enrollment)
+            @if($order->isBundleOrder() && $order->bundle)
+                <div class="space-y-2">
+                    @foreach($order->bundle->courses as $bCourse)
+                        @php
+                            $bEnrollment = $order->user->enrollments()->where('course_id', $bCourse->id)->first();
+                        @endphp
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                            <div class="flex items-center gap-2.5">
+                                <span class="h-2 w-2 rounded-full {{ $bEnrollment ? 'bg-emerald-400' : 'bg-slate-500' }}"></span>
+                                <span class="font-semibold text-white">{{ $bCourse->title }}</span>
+                            </div>
+                            <span class="text-[11px] {{ $bEnrollment ? 'text-emerald-400 font-semibold' : 'text-slate-500' }}">
+                                {{ $bEnrollment ? 'Active Access' : 'Not Enrolled' }}
+                            </span>
+                        </div>
+                    @endforeach
+                </div>
+            @elseif($enrollment)
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">

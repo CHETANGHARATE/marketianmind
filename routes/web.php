@@ -1,8 +1,19 @@
 <?php
 
 use App\Http\Controllers\Admin\AnnouncementController as AdminAnnouncementController;
+use App\Http\Controllers\Admin\ArticleCategoryController as AdminArticleCategoryController;
+use App\Http\Controllers\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
+use App\Http\Controllers\Admin\AutomationController as AdminAutomationController;
+use App\Http\Controllers\Admin\BundleController as AdminBundleController;
 use App\Http\Controllers\Admin\CouponController as AdminCouponController;
+use App\Http\Controllers\Admin\ExperimentController as AdminExperimentController;
+use App\Http\Controllers\Admin\FunnelController as AdminFunnelController;
+use App\Http\Controllers\Admin\MarketingTemplateController as AdminMarketingTemplateController;
+use App\Http\Controllers\Admin\WhatsAppController as AdminWhatsAppController;
+use App\Http\Controllers\HealthController;
+use App\Http\Controllers\Public\ConversionEventController;
+
 use App\Http\Controllers\Admin\CourseReviewController as AdminCourseReviewController;
 use App\Http\Controllers\Admin\CertificateController as AdminCertificateController;
 use App\Http\Controllers\Admin\CourseAnalyticsController;
@@ -16,6 +27,7 @@ use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LessonController as AdminLessonController;
 use App\Http\Controllers\Admin\LessonResourceController as AdminLessonResourceController;
 use App\Http\Controllers\Admin\MailController as AdminMailController;
+use App\Http\Controllers\Admin\OfferController as AdminOfferController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ReferralController as AdminReferralController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
@@ -24,12 +36,19 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Public\AboutController;
+use App\Http\Controllers\Public\BlogController;
+use App\Http\Controllers\Public\BundleController;
 use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\CourseController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\LeadCaptureController;
+use App\Http\Controllers\Public\MarketingUnsubscribeController;
 use App\Http\Controllers\Public\ReferralCaptureController;
+use App\Http\Controllers\Public\SitemapController;
+use App\Http\Controllers\Public\WhatsAppOptOutController;
+use App\Http\Controllers\Public\WhatsAppWebhookController;
 use App\Http\Controllers\RazorpayWebhookController;
+use App\Http\Controllers\Student\AchievementController as StudentAchievementController;
 use App\Http\Controllers\Student\CertificateController as StudentCertificateController;
 use App\Http\Controllers\Student\CheckoutController as StudentCheckoutController;
 use App\Http\Controllers\Student\CourseReviewController as StudentCourseReviewController;
@@ -55,10 +74,30 @@ Route::get('/about', [AboutController::class, 'index'])->name('about');
 Route::get('/courses', [CourseController::class, 'index'])->name('courses');
 Route::get('/courses/digital-marketing-for-business-owners', [CourseController::class, 'show'])->name('course.details');
 Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+Route::get('/bundles', [BundleController::class, 'index'])->name('bundles.index');
+Route::get('/bundles/{bundle}', [BundleController::class, 'show'])->name('bundles.show');
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'submit'])->middleware('throttle:6,1')->name('contact.submit');
 Route::post('/leads', [LeadCaptureController::class, 'store'])->middleware('throttle:6,1')->name('leads.store');
 Route::get('/ref/{code}', [ReferralCaptureController::class, 'capture'])->name('referral.capture');
+
+// Public Marketing Opt-Out
+Route::get('/marketing/unsubscribe', [MarketingUnsubscribeController::class, 'show'])->name('marketing.unsubscribe');
+Route::post('/marketing/unsubscribe', [MarketingUnsubscribeController::class, 'unsubscribe'])->name('marketing.unsubscribe.submit');
+
+// Public WhatsApp Opt-Out
+Route::get('/whatsapp/opt-out', [WhatsAppOptOutController::class, 'show'])->name('whatsapp.opt-out');
+Route::post('/whatsapp/opt-out', [WhatsAppOptOutController::class, 'optOut'])->name('whatsapp.opt-out.submit');
+
+// Public Conversion & Client-Side Interaction Tracking
+Route::post('/events/track', [ConversionEventController::class, 'track'])->middleware('throttle:60,1')->name('events.track');
+
+// Public Health Monitoring Endpoint (Lean, zero-leak)
+Route::get('/health', [HealthController::class, 'publicCheck'])->name('health');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -88,6 +127,8 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
 |--------------------------------------------------------------------------
 */
 Route::post('/webhooks/razorpay', [RazorpayWebhookController::class, 'handle'])->name('webhooks.razorpay');
+Route::get('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'verify'])->name('webhooks.whatsapp.verify');
+Route::post('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'handle'])->name('webhooks.whatsapp');
 
 /*
 |--------------------------------------------------------------------------
@@ -125,6 +166,7 @@ Route::middleware(['auth', 'student'])->prefix('student')->name('student.')->gro
 
     // Student Paid Course Purchase & Checkout
     Route::post('/courses/{course}/purchase', [StudentCheckoutController::class, 'purchase'])->name('courses.purchase');
+    Route::post('/bundles/{bundle}/purchase', [StudentCheckoutController::class, 'purchaseBundle'])->name('bundles.purchase');
     Route::get('/courses/checkout/{order}', [StudentCheckoutController::class, 'showCheckout'])->name('courses.checkout');
     Route::post('/courses/checkout/{order}/apply-coupon', [StudentCheckoutController::class, 'applyCoupon'])->name('courses.checkout.apply-coupon');
     Route::post('/courses/checkout/{order}/remove-coupon', [StudentCheckoutController::class, 'removeCoupon'])->name('courses.checkout.remove-coupon');
@@ -156,6 +198,9 @@ Route::middleware(['auth', 'student'])->prefix('student')->name('student.')->gro
 
     // Student Referral Program
     Route::get('/referrals', [StudentReferralController::class, 'index'])->name('referrals.index');
+
+    // Student Gamification & Achievements
+    Route::get('/achievements', [StudentAchievementController::class, 'index'])->name('achievements.index');
 });
 
 /*
@@ -166,10 +211,16 @@ Route::middleware(['auth', 'student'])->prefix('student')->name('student.')->gro
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::resource('courses', AdminCourseController::class);
+    Route::resource('bundles', AdminBundleController::class);
     Route::resource('course-categories', AdminCourseCategoryController::class)
         ->parameters(['course-categories' => 'category'])
         ->names('categories')
         ->except(['create', 'show', 'edit']);
+
+    // Admin Articles & Educational Blog CMS
+    Route::post('/articles/{article}/toggle-status', [AdminArticleController::class, 'toggleStatus'])->name('articles.toggle-status');
+    Route::resource('articles', AdminArticleController::class);
+    Route::resource('article-categories', AdminArticleCategoryController::class)->except(['create', 'show', 'edit']);
 
     // Admin Instructors Management
     Route::resource('instructors', AdminInstructorController::class)->except(['show']);
@@ -196,6 +247,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Admin Coupons & Promotions
     Route::resource('coupons', AdminCouponController::class)->except(['show']);
     Route::patch('/coupons/{coupon}/toggle', [AdminCouponController::class, 'toggleStatus'])->name('coupons.toggle');
+
+    // Admin Promotional Offers & Pricing
+    Route::resource('offers', AdminOfferController::class);
+    Route::patch('/offers/{offer}/toggle', [AdminOfferController::class, 'toggle'])->name('offers.toggle');
 
     // Admin Course Review Moderation
     Route::get('/reviews', [AdminCourseReviewController::class, 'index'])->name('reviews.index');
@@ -230,8 +285,31 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/mail', [AdminMailController::class, 'index'])->name('mail.index');
     Route::post('/mail/test', [AdminMailController::class, 'sendTest'])->name('mail.test');
 
-    // Admin Leads & Inquiries
-    Route::resource('leads', AdminLeadController::class)->only(['index', 'show', 'update', 'destroy']);
+    // Admin Leads & Mini CRM
+    Route::resource('leads', AdminLeadController::class);
+    Route::post('/leads/{lead}/notes', [AdminLeadController::class, 'addNote'])->name('leads.notes.store');
+    Route::post('/leads/{lead}/convert', [AdminLeadController::class, 'convert'])->name('leads.convert');
+    Route::patch('/leads/{lead}/follow-up/complete', [AdminLeadController::class, 'completeFollowUp'])->name('leads.follow-up.complete');
+
+    // Admin Marketing Automation & Templates
+    Route::resource('marketing-templates', AdminMarketingTemplateController::class)->except(['show']);
+    Route::resource('automations', AdminAutomationController::class);
+    Route::patch('/automations/{automation}/toggle', [AdminAutomationController::class, 'toggleStatus'])->name('automations.toggle');
+    Route::post('/automations/process-now', [AdminAutomationController::class, 'processNow'])->name('automations.process-now');
+
+    // Admin WhatsApp Integration & Meta Cloud API
+    Route::get('/whatsapp', [AdminWhatsAppController::class, 'dashboard'])->name('whatsapp.dashboard');
+    Route::get('/whatsapp/templates', [AdminWhatsAppController::class, 'templates'])->name('whatsapp.templates.index');
+    Route::get('/whatsapp/templates/create', [AdminWhatsAppController::class, 'createTemplate'])->name('whatsapp.templates.create');
+    Route::post('/whatsapp/templates', [AdminWhatsAppController::class, 'storeTemplate'])->name('whatsapp.templates.store');
+    Route::get('/whatsapp/templates/{template}/edit', [AdminWhatsAppController::class, 'editTemplate'])->name('whatsapp.templates.edit');
+    Route::put('/whatsapp/templates/{template}', [AdminWhatsAppController::class, 'updateTemplate'])->name('whatsapp.templates.update');
+    Route::post('/whatsapp/templates/{template}/toggle', [AdminWhatsAppController::class, 'toggleTemplate'])->name('whatsapp.templates.toggle');
+    Route::delete('/whatsapp/templates/{template}', [AdminWhatsAppController::class, 'destroyTemplate'])->name('whatsapp.templates.destroy');
+    Route::get('/whatsapp/messages', [AdminWhatsAppController::class, 'messages'])->name('whatsapp.messages.index');
+    Route::get('/whatsapp/settings', [AdminWhatsAppController::class, 'settings'])->name('whatsapp.settings');
+    Route::post('/whatsapp/manual-send', [AdminWhatsAppController::class, 'sendManual'])->name('whatsapp.manual-send');
+
 
     // Admin Referrals Management
     Route::get('/referrals', [AdminReferralController::class, 'index'])->name('referrals.index');
@@ -245,6 +323,22 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/reports/export/sales', [AdminReportController::class, 'exportSales'])->name('reports.export.sales');
     Route::get('/reports/export/courses', [AdminReportController::class, 'exportCourses'])->name('reports.export.courses');
     Route::get('/reports/export/enrollments', [AdminReportController::class, 'exportEnrollments'])->name('reports.export.enrollments');
+
+    // Admin Conversion Optimization & Funnel
+    Route::get('/funnel', [AdminFunnelController::class, 'index'])->name('funnel.index');
+
+    // Admin A/B Experimentation
+    Route::resource('experiments', AdminExperimentController::class);
+    Route::post('/experiments/{experiment}/activate', [AdminExperimentController::class, 'activate'])->name('experiments.activate');
+    Route::post('/experiments/{experiment}/pause', [AdminExperimentController::class, 'pause'])->name('experiments.pause');
+    Route::post('/experiments/{experiment}/complete', [AdminExperimentController::class, 'complete'])->name('experiments.complete');
+    Route::post('/experiments/{experiment}/archive', [AdminExperimentController::class, 'archive'])->name('experiments.archive');
+
+    // Admin System Health, Diagnostics & Backups
+    Route::get('/system/health', [HealthController::class, 'adminDashboard'])->name('system.health');
+    Route::post('/system/backups/run', [HealthController::class, 'triggerBackup'])->name('system.backups.run');
+    Route::get('/system/backups/download/{type}/{filename}', [HealthController::class, 'downloadBackup'])->name('system.backups.download');
+    Route::delete('/system/backups/{type}/{filename}', [HealthController::class, 'deleteBackup'])->name('system.backups.delete');
 });
 
 

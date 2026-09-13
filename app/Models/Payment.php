@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'order_id',
     'user_id',
     'course_id',
+    'bundle_id',
     'razorpay_payment_id',
     'razorpay_order_id',
     'amount',
@@ -68,6 +69,11 @@ class Payment extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function bundle(): BelongsTo
+    {
+        return $this->belongsTo(Bundle::class);
     }
 
     public function isCaptured(): bool

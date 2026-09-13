@@ -500,7 +500,7 @@ class CourseDetailTest extends TestCase
         $response = $this->get('/courses/' . $this->publishedPaidCourse->slug);
 
         $response->assertStatus(200);
-        $response->assertSee('<title>SEO Mastery for Small Business Owners - Online Marketing Education</title>', false);
+        $response->assertSee('<title>SEO Mastery for Small Business Owners | Marketian Mind</title>', false);
         $response->assertSee('A practical framework to rank locally on Google without an agency.');
     }
 

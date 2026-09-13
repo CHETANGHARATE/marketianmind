@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Student;
 use App\Enums\EnrollmentStatus;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Bundle;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Order;
 use App\Services\CouponService;
+use App\Services\PricingService;
 use App\Services\RazorpayService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,7 +23,7 @@ class CheckoutController extends Controller
     /**
      * Initiate a course purchase and redirect to the checkout screen.
      */
-    public function purchase(Request $request, Course $course, RazorpayService $razorpayService): RedirectResponse
+    public function purchase(Request $request, Course $course, RazorpayService $razorpayService, PricingService $pricingService): RedirectResponse
     {
         $user = $request->user();
 
@@ -41,7 +43,12 @@ class CheckoutController extends Controller
                 ->with('status', 'You are already enrolled in this course.');
         }
 
-        $amountInPaise = $course->effectivePriceInPaise();
+        // Authoritative server-side pricing resolution
+        $pricing = $pricingService->resolveForProduct($course, $user);
+        $baseAmountInPaise = $pricing['base_price_in_paise'];
+        $payableAmountInPaise = $pricing['offer_price_in_paise'];
+        $offerDiscountInPaise = $pricing['offer_discount_in_paise'];
+        $offerId = $pricing['offer']?->id;
 
         // Check for recent pending order that can be reused
         $order = Order::query()
@@ -58,17 +65,27 @@ class CheckoutController extends Controller
             $order = Order::create([
                 'user_id' => $user->id,
                 'course_id' => $course->id,
+                'bundle_id' => null,
+                'offer_id' => $offerId,
+                'offer_discount_amount' => $offerDiscountInPaise,
                 'order_number' => $orderNumber,
-                'original_amount' => $amountInPaise,
+                'original_amount' => $baseAmountInPaise,
                 'discount_amount' => 0,
-                'amount' => $amountInPaise,
+                'amount' => $payableAmountInPaise,
                 'currency' => 'INR',
                 'status' => OrderStatus::PENDING,
+                'metadata' => ['pricing_snapshot' => $pricing],
             ]);
         } else {
-            // Ensure original_amount is set on reused order
-            if (! $order->original_amount) {
-                $order->update(['original_amount' => $amountInPaise]);
+            // Update reused order if it has no coupon applied
+            if (! $order->hasCoupon()) {
+                $order->update([
+                    'original_amount' => $baseAmountInPaise,
+                    'offer_id' => $offerId,
+                    'offer_discount_amount' => $offerDiscountInPaise,
+                    'amount' => $payableAmountInPaise,
+                    'metadata' => array_merge($order->metadata ?? [], ['pricing_snapshot' => $pricing]),
+                ]);
             }
         }
 
@@ -93,6 +110,89 @@ class CheckoutController extends Controller
     }
 
     /**
+     * Initiate a course bundle purchase and redirect to checkout screen.
+     */
+    public function purchaseBundle(Request $request, Bundle $bundle, RazorpayService $razorpayService, PricingService $pricingService): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $bundle->isPublished()) {
+            abort(404, 'Bundle not found or unavailable.');
+        }
+
+        // Check if student already owns ALL courses in this bundle
+        if ($bundle->hasUserAccess($user)) {
+            return redirect()
+                ->route('bundles.show', $bundle)
+                ->with('status', 'You already have active access to all courses included in this bundle.');
+        }
+
+        // Authoritative server-side pricing resolution
+        $pricing = $pricingService->resolveForProduct($bundle, $user);
+        $baseAmountInPaise = $pricing['base_price_in_paise'];
+        $payableAmountInPaise = $pricing['offer_price_in_paise'];
+        $offerDiscountInPaise = $pricing['offer_discount_in_paise'];
+        $offerId = $pricing['offer']?->id;
+
+        // Check for recent pending order that can be reused
+        $order = Order::query()
+            ->where('user_id', $user->id)
+            ->where('bundle_id', $bundle->id)
+            ->where('status', OrderStatus::PENDING->value)
+            ->where('created_at', '>=', now()->subHours(24))
+            ->latest()
+            ->first();
+
+        if (! $order) {
+            $orderNumber = 'MM-BND-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+
+            $order = Order::create([
+                'user_id' => $user->id,
+                'bundle_id' => $bundle->id,
+                'course_id' => null,
+                'offer_id' => $offerId,
+                'offer_discount_amount' => $offerDiscountInPaise,
+                'order_number' => $orderNumber,
+                'original_amount' => $baseAmountInPaise,
+                'discount_amount' => 0,
+                'amount' => $payableAmountInPaise,
+                'currency' => 'INR',
+                'status' => OrderStatus::PENDING,
+                'metadata' => ['pricing_snapshot' => $pricing],
+            ]);
+        } else {
+            if (! $order->hasCoupon()) {
+                $order->update([
+                    'original_amount' => $baseAmountInPaise,
+                    'offer_id' => $offerId,
+                    'offer_discount_amount' => $offerDiscountInPaise,
+                    'amount' => $payableAmountInPaise,
+                    'metadata' => array_merge($order->metadata ?? [], ['pricing_snapshot' => $pricing]),
+                ]);
+            }
+        }
+
+        // Create Razorpay order if needed
+        if (! $order->razorpay_order_id && $order->amount > 0) {
+            $razorpayOrder = $razorpayService->createOrder(
+                $order->amount,
+                $order->order_number,
+                [
+                    'bundle_id' => (string) $bundle->id,
+                    'user_id' => (string) $user->id,
+                    'order_id' => (string) $order->id,
+                ]
+            );
+
+            $order->update([
+                'razorpay_order_id' => $razorpayOrder['id'],
+            ]);
+        }
+
+        return redirect()->route('student.courses.checkout', $order);
+    }
+
+    /**
      * Display the secure Razorpay Checkout screen for an order.
      */
     public function showCheckout(Request $request, Order $order, RazorpayService $razorpayService): View|RedirectResponse
@@ -102,15 +202,34 @@ class CheckoutController extends Controller
         }
 
         if ($order->isPaid()) {
+            if ($order->isBundleOrder() && $order->bundle) {
+                return redirect()
+                    ->route('bundles.show', $order->bundle)
+                    ->with('status', 'This order has already been paid.');
+            }
+
             return redirect()
                 ->route('student.courses.show', $order->course)
                 ->with('status', 'This order has already been paid.');
         }
 
         $course = $order->course;
+        $bundle = $order->bundle;
         $keyId = $razorpayService->getKeyId() ?? config('services.razorpay.key', 'rzp_test_mock');
 
-        return view('student.checkout', compact('order', 'course', 'keyId'));
+        app(\App\Services\ConversionTrackingService::class)->track(
+            \App\Enums\ConversionEventName::CHECKOUT_STARTED,
+            [
+                'course_id' => $order->course_id,
+                'bundle_id' => $order->bundle_id,
+                'metadata' => [
+                    'order_id' => $order->id,
+                    'amount' => $order->amount,
+                ],
+            ]
+        );
+
+        return view('student.checkout', compact('order', 'course', 'bundle', 'keyId'));
     }
 
     /**
@@ -192,6 +311,11 @@ class CheckoutController extends Controller
         }
 
         if ($order->isPaid()) {
+            if ($order->isBundleOrder() && $order->bundle) {
+                return redirect()->route('bundles.show', $order->bundle)
+                    ->with('status', 'This order is already paid.');
+            }
+
             return redirect()->route('student.courses.show', $order->course)
                 ->with('status', 'This order is already paid.');
         }
@@ -209,22 +333,52 @@ class CheckoutController extends Controller
             // Record coupon usage
             $couponService->recordUsage($lockedOrder);
 
-            // Grant active course enrollment
-            Enrollment::firstOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'course_id' => $lockedOrder->course_id,
-                ],
-                [
-                    'status' => EnrollmentStatus::ACTIVE,
-                    'enrolled_at' => now(),
-                ]
-            );
+            // Record offer usage if applicable
+            if ($lockedOrder->offer_id) {
+                \App\Models\Offer::where('id', $lockedOrder->offer_id)->increment('times_used');
+            }
+
+            // Grant active enrollments
+            if ($lockedOrder->isBundleOrder() && $lockedOrder->bundle) {
+                foreach ($lockedOrder->bundle->publishedCourses as $bCourse) {
+                    $enrollment = Enrollment::query()
+                        ->where('user_id', $user->id)
+                        ->where('course_id', $bCourse->id)
+                        ->first();
+
+                    if (! $enrollment) {
+                        Enrollment::create([
+                            'user_id' => $user->id,
+                            'course_id' => $bCourse->id,
+                            'status' => EnrollmentStatus::ACTIVE,
+                            'enrolled_at' => now(),
+                        ]);
+                        app(\App\Services\EngagementService::class)->handleEnrollment($user, $bCourse, true);
+                    } elseif (! $enrollment->isActive() && ! $enrollment->isCompleted()) {
+                        $enrollment->update([
+                            'status' => EnrollmentStatus::ACTIVE,
+                            'enrolled_at' => now(),
+                        ]);
+                    }
+                }
+            } elseif ($lockedOrder->course_id) {
+                Enrollment::firstOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'course_id' => $lockedOrder->course_id,
+                    ],
+                    [
+                        'status' => EnrollmentStatus::ACTIVE,
+                        'enrolled_at' => now(),
+                    ]
+                );
+
+                if ($lockedOrder->course) {
+                    app(\App\Services\EngagementService::class)->handleEnrollment($user, $lockedOrder->course, true);
+                }
+            }
 
             $user->notify(new \App\Notifications\PaymentSuccessNotification($lockedOrder));
-            if ($lockedOrder->course) {
-                $user->notify(new \App\Notifications\CourseEnrollmentNotification($lockedOrder->course));
-            }
             app(\App\Services\TransactionalMailService::class)->sendOrderConfirmation($lockedOrder);
         });
 

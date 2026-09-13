@@ -26,8 +26,8 @@
             <!-- Receipt Box -->
             <div class="mt-8 rounded-2xl border border-slate-100 bg-slate-50/80 p-5 text-left text-xs space-y-3">
                 <div class="flex justify-between items-center pb-3 border-b border-slate-200/60">
-                    <span class="text-slate-500">Course</span>
-                    <span class="font-bold text-slate-900 text-right">{{ $order->course->title }}</span>
+                    <span class="text-slate-500">{{ $order->isBundleOrder() ? 'Package Bundle' : 'Course' }}</span>
+                    <span class="font-bold text-slate-900 text-right">{{ $order->productTitle() }}</span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-slate-500">Order Reference</span>
@@ -51,9 +51,15 @@
 
             <!-- Action Buttons -->
             <div class="mt-8 space-y-3">
-                <a href="{{ route('student.courses.show', $order->course) }}" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-500 transition">
-                    Start Learning Now &rarr;
-                </a>
+                @if($order->isBundleOrder())
+                    <a href="{{ route('student.my-learning') }}" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-500 transition">
+                        Go to My Learning &rarr;
+                    </a>
+                @elseif($order->course)
+                    <a href="{{ route('student.courses.show', $order->course) }}" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-500 transition">
+                        Start Learning Now &rarr;
+                    </a>
+                @endif
                 <a href="{{ route('student.orders.index') }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
                     View Purchase History
                 </a>

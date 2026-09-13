@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Public;
 
-use App\Enums\LeadStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Public\StoreLeadRequest;
 use App\Models\Course;
 use App\Models\Lead;
+use App\Services\LeadService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,7 +29,7 @@ class ContactController extends Controller
     /**
      * Handle incoming contact form submission.
      */
-    public function submit(StoreLeadRequest $request): RedirectResponse
+    public function submit(StoreLeadRequest $request, LeadService $leadService): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -37,10 +37,15 @@ class ContactController extends Controller
         unset($validated['website']);
 
         $validated['source'] = $validated['source'] ?? 'contact_page';
-        $validated['status'] = LeadStatus::NEW->value;
-        $validated['ip_address'] = $request->ip();
 
-        Lead::create($validated);
+        $lead = $leadService->createOrDeduplicateLead($validated, $request->ip());
+
+        // Track Contact Form Lead Conversion Event
+        app(\App\Services\ConversionTrackingService::class)->track('lead_created', [
+            'lead_id' => $lead->id,
+            'course_id' => $lead->course_id,
+            'metadata' => ['source' => 'contact_page'],
+        ]);
 
         return redirect()
             ->route('contact')

@@ -28,6 +28,7 @@ class OrderController extends Controller
         $query = Order::query()->with([
             'user',
             'course.category',
+            'bundle',
             'payments' => fn ($q) => $q->latest(),
         ]);
 
@@ -42,6 +43,9 @@ class OrderController extends Controller
                     })
                     ->orWhereHas('course', function ($cq) use ($search) {
                         $cq->where('title', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('bundle', function ($bq) use ($search) {
+                        $bq->where('title', 'like', "%{$search}%");
                     })
                     ->orWhereHas('payments', function ($pq) use ($search) {
                         $pq->where('razorpay_payment_id', 'like', "%{$search}%");
@@ -136,6 +140,7 @@ class OrderController extends Controller
         $order->load([
             'user',
             'course.category',
+            'bundle.courses',
             'payments' => fn ($q) => $q->latest(),
         ]);
 

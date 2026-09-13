@@ -280,15 +280,26 @@
                                     </div>
                                 </td>
 
-                                <!-- Course -->
+                                <!-- Product / Course / Bundle -->
                                 <td class="px-6 py-4 max-w-[220px]">
-                                    <a href="{{ route('admin.courses.edit', $order->course) }}" class="font-medium text-slate-200 hover:text-amber-400 transition block truncate" title="{{ $order->course->title }}">
-                                        {{ $order->course->title }}
-                                    </a>
-                                    @if($order->course->category)
-                                        <span class="inline-flex items-center rounded-md bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400 mt-1">
-                                            {{ $order->course->category->name }}
+                                    @if($order->isBundleOrder() && $order->bundle)
+                                        <a href="{{ route('admin.bundles.edit', $order->bundle) }}" class="font-medium text-slate-200 hover:text-amber-400 transition block truncate" title="{{ $order->bundle->title }}">
+                                            {{ $order->bundle->title }}
+                                        </a>
+                                        <span class="inline-flex items-center rounded-md bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 text-[10px] font-semibold mt-1">
+                                            Course Bundle
                                         </span>
+                                    @elseif($order->course)
+                                        <a href="{{ route('admin.courses.edit', $order->course) }}" class="font-medium text-slate-200 hover:text-amber-400 transition block truncate" title="{{ $order->course->title }}">
+                                            {{ $order->course->title }}
+                                        </a>
+                                        @if($order->course->category)
+                                            <span class="inline-flex items-center rounded-md bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400 mt-1">
+                                                {{ $order->course->category->name }}
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span class="font-medium text-slate-200 block truncate">{{ $order->productTitle() }}</span>
                                     @endif
                                 </td>
 

@@ -119,6 +119,7 @@ class RazorpayWebhookController extends Controller
                         'order_id' => $lockedOrder->id,
                         'user_id' => $lockedOrder->user_id,
                         'course_id' => $lockedOrder->course_id,
+                        'bundle_id' => $lockedOrder->bundle_id,
                         'razorpay_order_id' => $razorpayOrderId,
                         'amount' => $paymentData['amount'] ?? $lockedOrder->amount,
                         'currency' => $paymentData['currency'] ?? $lockedOrder->currency,
@@ -130,39 +131,123 @@ class RazorpayWebhookController extends Controller
                 );
             }
 
-            if (! $lockedOrder->isPaid()) {
+            $wasPaid = $lockedOrder->isPaid();
+
+            if (! $wasPaid) {
                 $lockedOrder->markPaid();
+
+                // Increment offer usage if applicable
+                if ($lockedOrder->offer_id) {
+                    \App\Models\Offer::where('id', $lockedOrder->offer_id)->increment('times_used');
+                }
             }
 
             // Attribute referral conversion if order belongs to a referred student
             app(\App\Services\ReferralService::class)->attributeConversion($lockedOrder);
 
-            $enrollment = Enrollment::query()
-                ->where('user_id', $lockedOrder->user_id)
-                ->where('course_id', $lockedOrder->course_id)
-                ->first();
+            // Auto-convert matching CRM leads
+            if ($orderUser = \App\Models\User::find($lockedOrder->user_id)) {
+                app(\App\Services\LeadService::class)->autoConvertMatchingLeads($orderUser, 'webhook payment');
+            }
 
-            if (! $enrollment) {
-                Enrollment::create([
-                    'user_id' => $lockedOrder->user_id,
-                    'course_id' => $lockedOrder->course_id,
-                    'status' => EnrollmentStatus::ACTIVE,
-                    'enrolled_at' => now(),
-                ]);
-            } elseif (! $enrollment->isActive() && ! $enrollment->isCompleted()) {
-                $enrollment->update([
-                    'status' => EnrollmentStatus::ACTIVE,
-                    'enrolled_at' => now(),
-                ]);
+            if ($lockedOrder->isBundleOrder() && $lockedOrder->bundle) {
+                $bundleCourses = $lockedOrder->bundle->publishedCourses;
+                foreach ($bundleCourses as $bCourse) {
+                    $enrollment = Enrollment::query()
+                        ->where('user_id', $lockedOrder->user_id)
+                        ->where('course_id', $bCourse->id)
+                        ->first();
+
+                    if (! $enrollment) {
+                        Enrollment::create([
+                            'user_id' => $lockedOrder->user_id,
+                            'course_id' => $bCourse->id,
+                            'status' => EnrollmentStatus::ACTIVE,
+                            'enrolled_at' => now(),
+                        ]);
+                        $user = \App\Models\User::find($lockedOrder->user_id);
+                        if ($user) {
+                            app(\App\Services\EngagementService::class)->handleEnrollment($user, $bCourse, true);
+                        }
+                    } elseif (! $enrollment->isActive() && ! $enrollment->isCompleted()) {
+                        $enrollment->update([
+                            'status' => EnrollmentStatus::ACTIVE,
+                            'enrolled_at' => now(),
+                        ]);
+                    }
+                }
+            } elseif ($lockedOrder->course_id) {
+                $enrollment = Enrollment::query()
+                    ->where('user_id', $lockedOrder->user_id)
+                    ->where('course_id', $lockedOrder->course_id)
+                    ->first();
+
+                if (! $enrollment) {
+                    Enrollment::create([
+                        'user_id' => $lockedOrder->user_id,
+                        'course_id' => $lockedOrder->course_id,
+                        'status' => EnrollmentStatus::ACTIVE,
+                        'enrolled_at' => now(),
+                    ]);
+                } elseif (! $enrollment->isActive() && ! $enrollment->isCompleted()) {
+                    $enrollment->update([
+                        'status' => EnrollmentStatus::ACTIVE,
+                        'enrolled_at' => now(),
+                    ]);
+                }
+
+                $user = \App\Models\User::find($lockedOrder->user_id);
+                if ($user && $lockedOrder->course) {
+                    app(\App\Services\EngagementService::class)->handleEnrollment($user, $lockedOrder->course, true);
+                }
             }
 
             $user = \App\Models\User::find($lockedOrder->user_id);
             if ($user) {
                 $user->notify(new \App\Notifications\PaymentSuccessNotification($lockedOrder));
-                if ($lockedOrder->course) {
-                    $user->notify(new \App\Notifications\CourseEnrollmentNotification($lockedOrder->course));
-                }
                 app(\App\Services\TransactionalMailService::class)->sendOrderConfirmation($lockedOrder);
+            }
+
+            app(\App\Services\ConversionTrackingService::class)->track(
+                \App\Enums\ConversionEventName::PAYMENT_SUCCESS,
+                [
+                    'course_id' => $lockedOrder->course_id,
+                    'bundle_id' => $lockedOrder->bundle_id,
+                    'user_id' => $lockedOrder->user_id,
+                    'metadata' => [
+                        'order_id' => $lockedOrder->id,
+                        'amount' => $lockedOrder->amount,
+                        'source' => 'razorpay_webhook_order_paid',
+                    ],
+                ]
+            );
+
+            if ($lockedOrder->isBundleOrder()) {
+                app(\App\Services\ConversionTrackingService::class)->track(
+                    \App\Enums\ConversionEventName::BUNDLE_PURCHASED,
+                    [
+                        'bundle_id' => $lockedOrder->bundle_id,
+                        'user_id' => $lockedOrder->user_id,
+                        'metadata' => [
+                            'order_id' => $lockedOrder->id,
+                            'amount' => $lockedOrder->amount,
+                            'source' => 'razorpay_webhook',
+                        ],
+                    ]
+                );
+            } elseif ($lockedOrder->course_id) {
+                app(\App\Services\ConversionTrackingService::class)->track(
+                    \App\Enums\ConversionEventName::COURSE_ENROLLED,
+                    [
+                        'course_id' => $lockedOrder->course_id,
+                        'user_id' => $lockedOrder->user_id,
+                        'metadata' => [
+                            'order_id' => $lockedOrder->id,
+                            'amount' => $lockedOrder->amount,
+                            'source' => 'razorpay_webhook',
+                        ],
+                    ]
+                );
             }
         });
     }
@@ -192,6 +277,7 @@ class RazorpayWebhookController extends Controller
                     'order_id' => $lockedOrder->id,
                     'user_id' => $lockedOrder->user_id,
                     'course_id' => $lockedOrder->course_id,
+                    'bundle_id' => $lockedOrder->bundle_id,
                     'razorpay_order_id' => $razorpayOrderId,
                     'amount' => $paymentData['amount'] ?? $lockedOrder->amount,
                     'currency' => $paymentData['currency'] ?? $lockedOrder->currency,
@@ -202,22 +288,53 @@ class RazorpayWebhookController extends Controller
                 ]
             );
 
-            if (! $lockedOrder->isPaid()) {
+            $wasPaid = $lockedOrder->isPaid();
+
+            if (! $wasPaid) {
                 $lockedOrder->markPaid();
+
+                // Increment offer usage if applicable
+                if ($lockedOrder->offer_id) {
+                    \App\Models\Offer::where('id', $lockedOrder->offer_id)->increment('times_used');
+                }
             }
 
-            $enrollment = Enrollment::query()
-                ->where('user_id', $lockedOrder->user_id)
-                ->where('course_id', $lockedOrder->course_id)
-                ->first();
+            if ($lockedOrder->isBundleOrder() && $lockedOrder->bundle) {
+                $bundleCourses = $lockedOrder->bundle->publishedCourses;
+                foreach ($bundleCourses as $bCourse) {
+                    $enrollment = Enrollment::query()
+                        ->where('user_id', $lockedOrder->user_id)
+                        ->where('course_id', $bCourse->id)
+                        ->first();
 
-            if (! $enrollment) {
-                Enrollment::create([
-                    'user_id' => $lockedOrder->user_id,
-                    'course_id' => $lockedOrder->course_id,
-                    'status' => EnrollmentStatus::ACTIVE,
-                    'enrolled_at' => now(),
-                ]);
+                    if (! $enrollment) {
+                        Enrollment::create([
+                            'user_id' => $lockedOrder->user_id,
+                            'course_id' => $bCourse->id,
+                            'status' => EnrollmentStatus::ACTIVE,
+                            'enrolled_at' => now(),
+                        ]);
+                    } elseif (! $enrollment->isActive() && ! $enrollment->isCompleted()) {
+                        $enrollment->update([
+                            'status' => EnrollmentStatus::ACTIVE,
+                            'enrolled_at' => now(),
+                        ]);
+                    }
+                }
+            } elseif ($lockedOrder->course_id) {
+                $enrollment = Enrollment::query()
+                    ->where('user_id', $lockedOrder->user_id)
+                    ->where('course_id', $lockedOrder->course_id)
+                    ->first();
+
+                if (! $enrollment) {
+                    Enrollment::create([
+                        'user_id' => $lockedOrder->user_id,
+                        'course_id' => $lockedOrder->course_id,
+                        'status' => EnrollmentStatus::ACTIVE,
+                        'enrolled_at' => now(),
+                    ]);
+                }
             }
         });
     }
@@ -244,6 +361,7 @@ class RazorpayWebhookController extends Controller
                 'order_id' => $order->id,
                 'user_id' => $order->user_id,
                 'course_id' => $order->course_id,
+                'bundle_id' => $order->bundle_id,
                 'razorpay_order_id' => $razorpayOrderId,
                 'amount' => $paymentData['amount'] ?? $order->amount,
                 'currency' => $paymentData['currency'] ?? $order->currency,
@@ -254,5 +372,19 @@ class RazorpayWebhookController extends Controller
         );
 
         $order->markFailed();
+
+        app(\App\Services\ConversionTrackingService::class)->track(
+            \App\Enums\ConversionEventName::PAYMENT_FAILED,
+            [
+                'course_id' => $order->course_id,
+                'bundle_id' => $order->bundle_id,
+                'user_id' => $order->user_id,
+                'metadata' => [
+                    'order_id' => $order->id,
+                    'amount' => $order->amount,
+                    'source' => 'razorpay_webhook_payment_failed',
+                ],
+            ]
+        );
     }
 }

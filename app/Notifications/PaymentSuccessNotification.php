@@ -31,12 +31,12 @@ class PaymentSuccessNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
-        $courseTitle = $this->order->course ? $this->order->course->title : 'Course';
+        $productTitle = $this->order->productTitle();
 
         return [
             'type' => 'payment',
             'title' => 'Payment Confirmed',
-            'message' => 'Your payment of ₹' . number_format($this->order->amount, 2) . ' for "' . $courseTitle . '" was successful.',
+            'message' => 'Your payment of ' . $this->order->formattedAmount() . ' for "' . $productTitle . '" was successful.',
             'action_url' => route('student.orders.show', $this->order),
             'order_id' => $this->order->id,
             'order_number' => $this->order->order_number ?? (string) $this->order->id,

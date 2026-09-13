@@ -20,6 +20,12 @@
                 <a href="{{ route('courses') }}" class="transition hover:text-indigo-600 {{ request()->routeIs('courses*') ? 'text-indigo-600 font-semibold' : '' }}">
                     Courses
                 </a>
+                <a href="{{ route('bundles.index') }}" class="transition hover:text-indigo-600 {{ request()->routeIs('bundles*') ? 'text-indigo-600 font-semibold' : '' }}">
+                    Bundles
+                </a>
+                <a href="{{ route('blog.index') }}" class="transition hover:text-indigo-600 {{ request()->routeIs('blog*') ? 'text-indigo-600 font-semibold' : '' }}">
+                    Blog
+                </a>
                 <a href="{{ route('contact') }}" class="transition hover:text-indigo-600 {{ request()->routeIs('contact') ? 'text-indigo-600 font-semibold' : '' }}">
                     Contact
                 </a>
@@ -97,6 +103,12 @@
         </a>
         <a href="{{ route('courses') }}" class="block rounded-md px-3 py-2 text-base font-medium {{ request()->routeIs('courses*') ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
             Courses
+        </a>
+        <a href="{{ route('bundles.index') }}" class="block rounded-md px-3 py-2 text-base font-medium {{ request()->routeIs('bundles*') ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
+            Bundles
+        </a>
+        <a href="{{ route('blog.index') }}" class="block rounded-md px-3 py-2 text-base font-medium {{ request()->routeIs('blog*') ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
+            Blog
         </a>
         <a href="{{ route('contact') }}" class="block rounded-md px-3 py-2 text-base font-medium {{ request()->routeIs('contact') ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
             Contact

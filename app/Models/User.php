@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role', 'referral_code'])]
+#[Fillable(['name', 'email', 'phone', 'phone_normalized', 'whatsapp_opt_in', 'whatsapp_opted_in_at', 'whatsapp_opted_out_at', 'whatsapp_consent_source', 'password', 'role', 'referral_code'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -38,6 +38,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
+            'whatsapp_opt_in' => 'boolean',
+            'whatsapp_opted_in_at' => 'datetime',
+            'whatsapp_opted_out_at' => 'datetime',
         ];
     }
 
@@ -123,6 +126,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if the user is enrolled in all published courses of a bundle.
+     */
+    public function ownsAllBundleCourses(Bundle $bundle): bool
+    {
+        return $bundle->hasUserAccess($this);
+    }
+
+    /**
      * Get all orders placed by this user.
      */
     public function orders(): \Illuminate\Database\Eloquent\Relations\HasMany
@@ -136,6 +147,14 @@ class User extends Authenticatable
     public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get all articles authored by this user.
+     */
+    public function articles(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Article::class, 'author_id');
     }
 
     /**
@@ -252,5 +271,102 @@ class User extends Authenticatable
     public function referralAttribution(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(Referral::class, 'referred_id');
+    }
+
+    /**
+     * Get distinct learning days logged by this student.
+     */
+    public function learningDays(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(StudentLearningDay::class);
+    }
+
+    /**
+     * Get all point transactions earned by this student.
+     */
+    public function pointTransactions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PointTransaction::class);
+    }
+
+    /**
+     * Get total learning points balance for this student.
+     */
+    public function pointsBalance(): int
+    {
+        return (int) $this->pointTransactions()->sum('points');
+    }
+
+    /**
+     * Get all achievement badges earned by this student.
+     */
+    public function achievements(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Achievement::class, 'user_achievements')
+            ->withPivot('earned_at')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get user achievement pivot records.
+     */
+    public function userAchievements(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(UserAchievement::class);
+    }
+
+    /**
+     * CRM leads assigned to this user.
+     */
+    public function assignedLeads(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Lead::class, 'assigned_to');
+    }
+
+    /**
+     * CRM internal notes authored by this user.
+     */
+    public function leadNotes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(LeadNote::class, 'user_id');
+    }
+
+    /**
+     * User's WhatsApp messages.
+     */
+    public function whatsappMessages(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(WhatsAppMessage::class);
+    }
+
+    /**
+     * Check if the user has opted in to WhatsApp marketing messages.
+     */
+    public function hasWhatsAppOptIn(): bool
+    {
+        return (bool) $this->whatsapp_opt_in;
+    }
+
+    /**
+     * Record WhatsApp marketing opt-in.
+     */
+    public function recordWhatsAppOptIn(string $source = 'user_profile'): void
+    {
+        $this->update([
+            'whatsapp_opt_in' => true,
+            'whatsapp_opted_in_at' => now(),
+            'whatsapp_consent_source' => $source,
+        ]);
+    }
+
+    /**
+     * Record WhatsApp marketing opt-out.
+     */
+    public function recordWhatsAppOptOut(): void
+    {
+        $this->update([
+            'whatsapp_opt_in' => false,
+            'whatsapp_opted_out_at' => now(),
+        ]);
     }
 }

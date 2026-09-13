@@ -7,6 +7,7 @@ use App\Enums\EnrollmentStatus;
 use App\Enums\LessonStatus;
 use App\Enums\OrderStatus;
 use App\Enums\UserRole;
+use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\CourseModule;
 use App\Models\Enrollment;
@@ -14,7 +15,9 @@ use App\Models\Lesson;
 use App\Models\LessonProgress;
 use App\Models\Order;
 use App\Models\User;
+use App\Models\Wishlist;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class StudentDashboardTest extends TestCase
@@ -399,11 +402,278 @@ class StudentDashboardTest extends TestCase
     /**
      * TEST 16: Admin dashboard remains unaffected.
      */
-    public function test_admin_dashboard_remains_unaffected(): void
+     public function test_admin_dashboard_remains_unaffected(): void
+     {
+         $response = $this->actingAs($this->admin)->get('/admin/dashboard');
+
+         $response->assertStatus(200);
+         $response->assertSee('Admin Dashboard');
+     }
+
+    /**
+     * TEST 17: Certificates shown on dashboard belong strictly to the authenticated student.
+     */
+    public function test_certificates_shown_belong_only_to_authenticated_student(): void
     {
-        $response = $this->actingAs($this->admin)->get('/admin/dashboard');
+        $enrollmentMaya = Enrollment::create([
+            'user_id' => $this->student->id,
+            'course_id' => $this->courseA->id,
+            'status' => EnrollmentStatus::COMPLETED,
+            'enrolled_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $enrollmentJohn = Enrollment::create([
+            'user_id' => $this->otherStudent->id,
+            'course_id' => $this->courseB->id,
+            'status' => EnrollmentStatus::COMPLETED,
+            'enrolled_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $certMaya = Certificate::create([
+            'user_id' => $this->student->id,
+            'course_id' => $this->courseA->id,
+            'enrollment_id' => $enrollmentMaya->id,
+            'certificate_number' => 'MM-2026-MAYA0001',
+            'course_title' => $this->courseA->title,
+            'student_name' => $this->student->name,
+            'course_completion_date' => now(),
+            'issued_at' => now(),
+        ]);
+
+        $certJohn = Certificate::create([
+            'user_id' => $this->otherStudent->id,
+            'course_id' => $this->courseB->id,
+            'enrollment_id' => $enrollmentJohn->id,
+            'certificate_number' => 'MM-2026-JOHNSECRET',
+            'course_title' => $this->courseB->title,
+            'student_name' => $this->otherStudent->name,
+            'course_completion_date' => now(),
+            'issued_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->student)->get('/student/dashboard');
 
         $response->assertStatus(200);
-        $response->assertSee('Admin Dashboard');
+        $response->assertSee('Earned Certificates');
+        $response->assertSee('MM-2026-MAYA0001');
+        $response->assertDontSee('MM-2026-JOHNSECRET');
+    }
+
+    /**
+     * TEST 18: Wishlist / Saved Courses appear and are isolated to the authenticated student.
+     */
+    public function test_saved_courses_appear_in_dashboard_and_are_isolated(): void
+    {
+        Wishlist::create([
+            'user_id' => $this->student->id,
+            'course_id' => $this->courseA->id,
+        ]);
+
+        Wishlist::create([
+            'user_id' => $this->otherStudent->id,
+            'course_id' => $this->courseB->id,
+        ]);
+
+        $response = $this->actingAs($this->student)->get('/student/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertSee('Saved Courses');
+        $response->assertSee($this->courseA->title);
+        $response->assertDontSee($this->courseB->title);
+    }
+
+    /**
+     * TEST 19: Notifications belong only to authenticated student.
+     */
+    public function test_notifications_belong_only_to_authenticated_student(): void
+    {
+        $this->student->notifications()->create([
+            'id' => (string) Str::uuid(),
+            'type' => 'App\Notifications\StudentNotice',
+            'data' => [
+                'title' => 'Personal Announcement For Maya',
+                'message' => 'Your custom curriculum has been updated.',
+            ],
+            'created_at' => now(),
+        ]);
+
+        $this->otherStudent->notifications()->create([
+            'id' => (string) Str::uuid(),
+            'type' => 'App\Notifications\StudentNotice',
+            'data' => [
+                'title' => 'Top Secret Notification For John',
+                'message' => 'John confidential message.',
+            ],
+            'created_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->student)->get('/student/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertSee('Personal Announcement For Maya');
+        $response->assertDontSee('Top Secret Notification For John');
+    }
+
+    /**
+     * TEST 20: Empty states for certificates, wishlist, notifications, and activity work.
+     */
+    public function test_empty_states_for_subsystems_display_properly(): void
+    {
+        $response = $this->actingAs($this->student)->get('/student/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertSee('Complete a course to earn your first certificate.');
+        $response->assertSee('No saved courses yet.');
+        $response->assertSee("You're all caught up.");
+        $response->assertSee('No recent learning activity.');
+    }
+
+    /**
+     * TEST 21: Course with zero progress displays 'Start Course'.
+     */
+    public function test_course_with_zero_progress_displays_start_course(): void
+    {
+        $module = CourseModule::create([
+            'course_id' => $this->courseA->id,
+            'title' => 'Getting Started',
+            'sort_order' => 1,
+        ]);
+        Lesson::create([
+            'course_module_id' => $module->id,
+            'title' => 'Lesson 1',
+            'slug' => 'lesson-1-start',
+            'status' => LessonStatus::PUBLISHED,
+            'sort_order' => 1,
+        ]);
+
+        Enrollment::create([
+            'user_id' => $this->student->id,
+            'course_id' => $this->courseA->id,
+            'status' => EnrollmentStatus::ACTIVE,
+            'enrolled_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->student)->get('/student/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertSee('Start Course');
+        $response->assertSee('0%');
+    }
+
+    /**
+     * TEST 22: Completed course without certificate displays 'Review Course' and no certificate link.
+     */
+    public function test_completed_course_without_certificate_displays_correctly(): void
+    {
+        $module = CourseModule::create([
+            'course_id' => $this->courseA->id,
+            'title' => 'Complete Module',
+            'sort_order' => 1,
+        ]);
+        $lesson = Lesson::create([
+            'course_module_id' => $module->id,
+            'title' => 'Master Lesson',
+            'slug' => 'master-lesson',
+            'status' => LessonStatus::PUBLISHED,
+            'sort_order' => 1,
+        ]);
+
+        Enrollment::create([
+            'user_id' => $this->student->id,
+            'course_id' => $this->courseA->id,
+            'status' => EnrollmentStatus::COMPLETED,
+            'enrolled_at' => now(),
+        ]);
+
+        LessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $lesson->id,
+            'completed' => true,
+            'completed_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->student)->get('/student/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertSee('Completed');
+        $response->assertSee('Review Course');
+        // No certificate button for this course
+        $response->assertDontSee(route('student.certificates.show', 1));
+    }
+
+    /**
+     * TEST 23: Dashboard handles course without next lesson safely.
+     */
+    public function test_course_without_next_lesson_falls_back_safely(): void
+    {
+        // Enrolled in course with no modules/lessons
+        Enrollment::create([
+            'user_id' => $this->student->id,
+            'course_id' => $this->courseA->id,
+            'status' => EnrollmentStatus::ACTIVE,
+            'enrolled_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->student)->get('/student/dashboard');
+
+        $response->assertStatus(200);
+        // Falls back safely to course show route
+        $response->assertSee(route('student.courses.show', $this->courseA));
+    }
+
+    /**
+     * TEST 24: Recent learning activity displays authentic completed lessons.
+     */
+    public function test_recent_learning_activity_displays_authentic_completed_lessons(): void
+    {
+        $module = CourseModule::create([
+            'course_id' => $this->courseA->id,
+            'title' => 'Module Alpha',
+            'sort_order' => 1,
+        ]);
+        $lesson = Lesson::create([
+            'course_module_id' => $module->id,
+            'title' => 'Unique Strategy Breakdown',
+            'slug' => 'unique-strategy-breakdown',
+            'status' => LessonStatus::PUBLISHED,
+            'sort_order' => 1,
+        ]);
+
+        LessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $lesson->id,
+            'completed' => true,
+            'completed_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->student)->get('/student/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertSee('Recent Learning Activity');
+        $response->assertSee('Completed: Unique Strategy Breakdown');
+        $response->assertSee('Social Media Growth Engine');
+    }
+
+    /**
+     * TEST 25: IDOR protection - URL query parameters do not leak another student's data.
+     */
+    public function test_idor_protection_query_parameters_do_not_leak_other_student_data(): void
+    {
+        // John enrolls in Course B
+        Enrollment::create([
+            'user_id' => $this->otherStudent->id,
+            'course_id' => $this->courseB->id,
+            'status' => EnrollmentStatus::ACTIVE,
+            'enrolled_at' => now(),
+        ]);
+
+        // Maya attempts to pass ?user_id=John to view his dashboard
+        $response = $this->actingAs($this->student)->get('/student/dashboard?user_id=' . $this->otherStudent->id);
+
+        $response->assertStatus(200);
+        $response->assertSee('Welcome back, Maya Founder!');
+        $response->assertDontSee($this->courseB->title);
     }
 }

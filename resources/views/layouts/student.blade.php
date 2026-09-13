@@ -64,6 +64,15 @@
                 Learning Progress
             </a>
 
+            <!-- 5. Achievements & Streaks -->
+            <a href="{{ route('student.achievements.index') }}"
+               class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('student.achievements.*') ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('student.achievements.*') ? 'text-indigo-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+                Achievements
+            </a>
+
             <!-- 5. Purchase History -->
             <a href="{{ route('student.orders.index') }}"
                class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs('student.orders.*') ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900' }}">
@@ -152,6 +161,9 @@
                 </a>
                 <a href="{{ route('student.progress') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold {{ request()->routeIs('student.progress') ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600' }}">
                     Learning Progress
+                </a>
+                <a href="{{ route('student.achievements.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold {{ request()->routeIs('student.achievements.*') ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600' }}">
+                    Achievements
                 </a>
                 <a href="{{ route('student.orders.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold {{ request()->routeIs('student.orders.*') ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600' }}">
                     Purchase History

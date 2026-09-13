@@ -94,6 +94,13 @@ class LessonController extends Controller
 
         $this->authorizeLessonAccess($user, $course, $lesson);
 
+        $progressRecord = LessonProgress::query()
+            ->where('user_id', $user->id)
+            ->where('lesson_id', $lesson->id)
+            ->first();
+
+        $wasLessonAlreadyCompleted = $progressRecord?->completed ?? false;
+
         LessonProgress::query()->updateOrCreate(
             [
                 'user_id' => $user->id,
@@ -105,6 +112,13 @@ class LessonController extends Controller
                 'last_watched_at' => now(),
             ]
         );
+
+        // Gamification: Award lesson points & evaluate achievements
+        if (! $wasLessonAlreadyCompleted) {
+            app(\App\Services\GamificationService::class)->awardLessonCompletion($user, $lesson);
+        } else {
+            app(\App\Services\GamificationService::class)->recordLearningActivity($user, 'lesson_completed');
+        }
 
         // Recalculate course completion
         $progress = $course->progressFor($user);
@@ -120,16 +134,18 @@ class LessonController extends Controller
 
                 if (! $wasAlreadyCompleted) {
                     $enrollment->markAsCompleted();
-                    $user->notify(new \App\Notifications\CourseCompletionNotification($course));
-                    app(\App\Services\TransactionalMailService::class)->sendCourseCompletion($user, $course);
+                    app(\App\Services\EngagementService::class)->handleCourseCompletion($user, $course);
+                    app(\App\Services\GamificationService::class)->awardCourseCompletion($user, $course);
                 }
 
                 $certificate = Certificate::issueFor($user, $course, $enrollment);
                 if ($certificate && ! $wasAlreadyCompleted) {
-                    $user->notify(new \App\Notifications\CertificateAvailableNotification($certificate));
-                    app(\App\Services\TransactionalMailService::class)->sendCertificateIssued($certificate);
+                    app(\App\Services\EngagementService::class)->handleCertificateAvailable($user, $certificate);
                 }
             }
+        } else {
+            // Milestone encouragement (25%, 50%, 75%, 90% near completion)
+            app(\App\Services\EngagementService::class)->handleProgressMilestones($user, $course, $progress['percentage']);
         }
 
         $nextLesson = $lesson->nextLesson();

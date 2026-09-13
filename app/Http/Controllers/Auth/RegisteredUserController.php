@@ -47,7 +47,17 @@ class RegisteredUserController extends Controller
         $referralCode = $request->input('ref') ?? $request->input('referral_code');
         app(\App\Services\ReferralService::class)->attributeRegistration($user, $referralCode, $request->ip());
 
+        // Auto-convert matching CRM leads
+        app(\App\Services\LeadService::class)->autoConvertMatchingLeads($user, 'registration');
+
         app(\App\Services\TransactionalMailService::class)->sendWelcome($user);
+
+        app(\App\Services\MarketingAutomationService::class)->dispatchTrigger(
+            \App\Enums\AutomationTrigger::STUDENT_REGISTERED,
+            $user,
+            [],
+            'student_registered_' . $user->id
+        );
 
         return AuthRedirectService::toDashboard($user);
     }

@@ -2,7 +2,30 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+Schedule::command('engagement:process')
+    ->daily()
+    ->name('process-student-engagement-automation')
+    ->withoutOverlapping();
+
+Schedule::command('automation:process')
+    ->everyFifteenMinutes()
+    ->name('process-marketing-automation-executions')
+    ->withoutOverlapping();
+
+Schedule::command('app:backup --type=db --prune')
+    ->dailyAt('02:00')
+    ->name('daily-database-backup')
+    ->withoutOverlapping();
+
+Schedule::command('app:backup --type=files --prune')
+    ->weeklyOn(0, '03:00')
+    ->name('weekly-files-backup')
+    ->withoutOverlapping();
+
+

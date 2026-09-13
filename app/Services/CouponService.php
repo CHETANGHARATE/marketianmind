@@ -122,10 +122,22 @@ class CouponService
      */
     public function applyToOrder(Order $order, string $couponCode, User $user, RazorpayService $razorpayService): array
     {
-        $baseAmount = $order->original_amount ?? $order->amount;
+        // Check offer stacking rule
+        if ($order->hasOffer() && ! ($order->offer?->allow_coupons)) {
+            return [
+                'success' => false,
+                'message' => 'Coupons cannot be combined with promotional offer pricing.',
+            ];
+        }
+
+        // The base amount on which the coupon discount applies
+        $effectiveBase = $order->hasOffer()
+            ? max(0, ($order->original_amount ?? $order->amount) - ($order->offer_discount_amount ?? 0))
+            : ($order->original_amount ?? $order->amount);
+
         $course = $order->course;
 
-        $validation = $this->validate($couponCode, $user, $course, $baseAmount);
+        $validation = $this->validate($couponCode, $user, $course, $effectiveBase);
 
         if (! $validation['valid']) {
             return [
@@ -139,22 +151,30 @@ class CouponService
         $discountAmount = $validation['discount_amount'];
         $finalAmount = $validation['final_amount'];
 
-        $order->original_amount = $baseAmount;
         $order->coupon_id = $coupon->id;
         $order->coupon_code = $coupon->code;
         $order->discount_amount = $discountAmount;
         $order->amount = $finalAmount;
 
         if ($finalAmount > 0) {
+            $notes = [
+                'user_id' => (string) $user->id,
+                'order_id' => (string) $order->id,
+                'coupon_code' => $coupon->code,
+            ];
+
+            if ($order->course_id) {
+                $notes['course_id'] = (string) $order->course_id;
+            }
+
+            if ($order->bundle_id) {
+                $notes['bundle_id'] = (string) $order->bundle_id;
+            }
+
             $razorpayOrder = $razorpayService->createOrder(
                 $finalAmount,
                 $order->order_number,
-                [
-                    'course_id' => (string) $course->id,
-                    'user_id' => (string) $user->id,
-                    'order_id' => (string) $order->id,
-                    'coupon_code' => $coupon->code,
-                ]
+                $notes
             );
 
             $order->razorpay_order_id = $razorpayOrder['id'];
@@ -189,25 +209,39 @@ class CouponService
             ];
         }
 
-        $baseAmount = $order->original_amount ?? $order->amount;
-        $course = $order->course;
+        // Restored amount is original amount minus any promotional offer discount
+        $restoredAmount = max(0, ($order->original_amount ?? $order->amount) - ($order->offer_discount_amount ?? 0));
 
-        $order->amount = $baseAmount;
+        $order->amount = $restoredAmount;
         $order->discount_amount = 0;
         $order->coupon_id = null;
         $order->coupon_code = null;
 
-        $razorpayOrder = $razorpayService->createOrder(
-            $baseAmount,
-            $order->order_number,
-            [
-                'course_id' => (string) $course->id,
+        if ($restoredAmount > 0) {
+            $notes = [
                 'user_id' => (string) $order->user_id,
                 'order_id' => (string) $order->id,
-            ]
-        );
+            ];
 
-        $order->razorpay_order_id = $razorpayOrder['id'];
+            if ($order->course_id) {
+                $notes['course_id'] = (string) $order->course_id;
+            }
+
+            if ($order->bundle_id) {
+                $notes['bundle_id'] = (string) $order->bundle_id;
+            }
+
+            $razorpayOrder = $razorpayService->createOrder(
+                $restoredAmount,
+                $order->order_number,
+                $notes
+            );
+
+            $order->razorpay_order_id = $razorpayOrder['id'];
+        } else {
+            $order->razorpay_order_id = null;
+        }
+
         $order->save();
 
         return [

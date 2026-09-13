@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 #[Fillable([
     'course_category_id',
@@ -119,6 +120,14 @@ class Course extends Model
     }
 
     /**
+     * Get SEO metadata for the course.
+     */
+    public function seo(): MorphOne
+    {
+        return $this->morphOne(SeoMeta::class, 'seoable');
+    }
+
+    /**
      * Scope a query to only include published courses.
      */
     public function scopePublished(Builder $query): Builder
@@ -151,9 +160,25 @@ class Course extends Model
     }
 
     /**
-     * Scope a query to search courses by title, short_description, description, or instructor_name.
+     * Get SQL expression for effective price calculation across queries and sorting.
+     */
+    public static function effectivePriceSql(): string
+    {
+        return '(CASE WHEN courses.is_free = 1 THEN 0.00 WHEN courses.discount_price IS NOT NULL AND courses.discount_price > 0 AND courses.discount_price < courses.price THEN courses.discount_price ELSE courses.price END)';
+    }
+
+    /**
+     * Scope a query to search courses by title, short_description, description, instructor_name, or category.
      */
     public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        return $this->scopeAdvancedSearch($query, $term);
+    }
+
+    /**
+     * Scope a query to perform advanced multi-column search across courses.
+     */
+    public function scopeAdvancedSearch(Builder $query, ?string $term): Builder
     {
         $term = trim($term ?? '');
 
@@ -165,8 +190,60 @@ class Course extends Model
             $q->where('courses.title', 'like', "%{$term}%")
                 ->orWhere('courses.short_description', 'like', "%{$term}%")
                 ->orWhere('courses.description', 'like', "%{$term}%")
-                ->orWhere('courses.instructor_name', 'like', "%{$term}%");
+                ->orWhere('courses.instructor_name', 'like', "%{$term}%")
+                ->orWhereHas('category', function (Builder $cq) use ($term) {
+                    $cq->where('name', 'like', "%{$term}%");
+                });
         });
+    }
+
+    /**
+     * Scope a query to filter courses by effective price range.
+     */
+    public function scopePriceRange(Builder $query, ?float $minPrice = null, ?float $maxPrice = null): Builder
+    {
+        if ($minPrice !== null && $minPrice >= 0) {
+            $minVal = (float) $minPrice;
+            $query->whereRaw(static::effectivePriceSql() . " >= {$minVal}");
+        }
+
+        if ($maxPrice !== null && $maxPrice >= 0) {
+            $maxVal = (float) $maxPrice;
+            $query->whereRaw(static::effectivePriceSql() . " <= {$maxVal}");
+        }
+
+        return $query;
+    }
+
+    /**
+     * Scope a query to filter courses by minimum average approved rating.
+     */
+    public function scopeMinRating(Builder $query, ?float $minRating): Builder
+    {
+        if ($minRating === null || $minRating <= 0) {
+            return $query;
+        }
+
+        $minVal = (float) $minRating;
+
+        return $query->whereHas('approvedReviews')
+            ->whereRaw(
+                "(SELECT COALESCE(AVG(rating), 0) FROM course_reviews WHERE course_reviews.course_id = courses.id AND course_reviews.status = ?) >= {$minVal}",
+                [\App\Enums\CourseReviewStatus::APPROVED->value]
+            );
+    }
+
+    /**
+     * Scope a query to filter courses by duration range.
+     */
+    public function scopeDurationRange(Builder $query, ?string $duration): Builder
+    {
+        return match ($duration) {
+            'short' => $query->whereRaw('(courses.estimated_duration + 0) > 0 AND (courses.estimated_duration + 0) < 3'),
+            'medium' => $query->whereRaw('(courses.estimated_duration + 0) >= 3 AND (courses.estimated_duration + 0) <= 10'),
+            'long' => $query->whereRaw('(courses.estimated_duration + 0) > 10'),
+            default => $query,
+        };
     }
 
     /**
@@ -225,6 +302,18 @@ class Course extends Model
     public function effectivePriceInPaise(): int
     {
         return (int) round($this->effectivePrice() * 100);
+    }
+
+    /**
+     * Get formatted course price with currency symbol.
+     */
+    public function formattedPrice(): string
+    {
+        if ($this->is_free) {
+            return 'Free';
+        }
+
+        return '₹' . number_format($this->effectivePrice(), 2);
     }
 
     /**
@@ -501,5 +590,71 @@ class Course extends Model
         }
 
         return $this->wishlists()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Get bundles that include this course.
+     */
+    public function bundles(): BelongsToMany
+    {
+        return $this->belongsToMany(Bundle::class, 'bundle_courses', 'course_id', 'bundle_id')
+            ->withPivot('sort_order')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get offers targeting this course.
+     */
+    public function offers()
+    {
+        return $this->belongsToMany(Offer::class, 'offer_products', 'product_id', 'offer_id')
+            ->withPivotValue('product_type', 'course')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the active winning promotional offer for this course, if any.
+     */
+    public function currentOffer(): ?Offer
+    {
+        return app(\App\Services\PricingService::class)->getWinningOffer($this);
+    }
+
+    /**
+     * Check if this course currently has an active promotional offer.
+     */
+    public function hasActiveOffer(): bool
+    {
+        return ! $this->is_free && $this->currentOffer() !== null;
+    }
+
+    /**
+     * Get the resolved current selling price (in rupees) after applying any active promotional offer.
+     */
+    public function finalPrice(): float
+    {
+        $pricing = app(\App\Services\PricingService::class)->resolveForProduct($this);
+        return $pricing['final_price'];
+    }
+
+    /**
+     * Get the resolved current selling price in paise.
+     */
+    public function finalPriceInPaise(): int
+    {
+        $pricing = app(\App\Services\PricingService::class)->resolveForProduct($this);
+        return $pricing['final_price_in_paise'];
+    }
+
+    /**
+     * Get the formatted final price.
+     */
+    public function formattedFinalPrice(): string
+    {
+        if ($this->is_free) {
+            return 'Free';
+        }
+
+        return '₹' . number_format($this->finalPrice(), 2);
     }
 }

@@ -11,7 +11,8 @@ class CourseCompletionNotification extends Notification
     use Queueable;
 
     public function __construct(
-        public Course $course
+        public Course $course,
+        public ?Course $recommendedCourse = null
     ) {}
 
     /**
@@ -31,7 +32,7 @@ class CourseCompletionNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
-        return [
+        $data = [
             'type' => 'completion',
             'title' => 'Course Completed! 🎉',
             'message' => 'Congratulations! You have completed 100% of "' . $this->course->title . '".',
@@ -39,5 +40,13 @@ class CourseCompletionNotification extends Notification
             'course_id' => $this->course->id,
             'course_title' => $this->course->title,
         ];
+
+        if ($this->recommendedCourse) {
+            $data['recommended_course_id'] = $this->recommendedCourse->id;
+            $data['recommended_course_title'] = $this->recommendedCourse->title;
+            $data['recommended_course_url'] = route('student.courses.show', $this->recommendedCourse);
+        }
+
+        return $data;
     }
 }

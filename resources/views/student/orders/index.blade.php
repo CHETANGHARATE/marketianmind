@@ -55,28 +55,55 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
-                                        @if($order->course->thumbnailUrl())
-                                            <img src="{{ $order->course->thumbnailUrl() }}" alt="{{ $order->course->title }}" class="h-9 w-12 rounded-lg object-cover shrink-0 border border-slate-100 bg-slate-100">
+                                        @if($order->isBundleOrder() && $order->bundle)
+                                            @if($order->bundle->thumbnail_url)
+                                                <img src="{{ $order->bundle->thumbnail_url }}" alt="{{ $order->bundle->title }}" class="h-9 w-12 rounded-lg object-cover shrink-0 border border-slate-100 bg-slate-100">
+                                            @else
+                                                <div class="h-9 w-12 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 font-black text-xs shrink-0">
+                                                    PKG
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <a href="{{ route('student.orders.show', $order) }}" class="font-bold text-slate-900 hover:text-indigo-600 transition block line-clamp-1">
+                                                    {{ $order->bundle->title }}
+                                                </a>
+                                                <div class="flex items-center gap-2 mt-0.5">
+                                                    <span class="inline-flex items-center text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                                                        Course Bundle
+                                                    </span>
+                                                    <span class="text-[10px] text-slate-400 font-mono">
+                                                        {{ $order->razorpay_order_id ? 'Gateway Ref: ' . $order->razorpay_order_id : 'Gateway: Pending' }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        @elseif($order->course)
+                                            @if($order->course->thumbnailUrl())
+                                                <img src="{{ $order->course->thumbnailUrl() }}" alt="{{ $order->course->title }}" class="h-9 w-12 rounded-lg object-cover shrink-0 border border-slate-100 bg-slate-100">
+                                            @else
+                                                <div class="h-9 w-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-black text-xs shrink-0">
+                                                    MM
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <a href="{{ route('student.orders.show', $order) }}" class="font-bold text-slate-900 hover:text-indigo-600 transition block line-clamp-1">
+                                                    {{ $order->course->title }}
+                                                </a>
+                                                <div class="flex items-center gap-2 mt-0.5">
+                                                    @if($order->course->category)
+                                                        <span class="inline-flex items-center text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+                                                            {{ $order->course->category->name }}
+                                                        </span>
+                                                    @endif
+                                                    <span class="text-[10px] text-slate-400 font-mono">
+                                                        {{ $order->razorpay_order_id ? 'Gateway Ref: ' . $order->razorpay_order_id : 'Gateway: Pending' }}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         @else
-                                            <div class="h-9 w-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-black text-xs shrink-0">
-                                                MM
+                                            <div>
+                                                <span class="font-bold text-slate-900 block line-clamp-1">{{ $order->productTitle() }}</span>
                                             </div>
                                         @endif
-                                        <div>
-                                            <a href="{{ route('student.orders.show', $order) }}" class="font-bold text-slate-900 hover:text-indigo-600 transition block line-clamp-1">
-                                                {{ $order->course->title }}
-                                            </a>
-                                            <div class="flex items-center gap-2 mt-0.5">
-                                                @if($order->course->category)
-                                                    <span class="inline-flex items-center text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
-                                                        {{ $order->course->category->name }}
-                                                    </span>
-                                                @endif
-                                                <span class="text-[10px] text-slate-400 font-mono">
-                                                    {{ $order->razorpay_order_id ? 'Gateway Ref: ' . $order->razorpay_order_id : 'Gateway: Pending' }}
-                                                </span>
-                                            </div>
-                                        </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 font-bold text-slate-900 text-sm">
@@ -93,9 +120,15 @@
                                 <td class="px-6 py-4 text-right whitespace-nowrap">
                                     <div class="flex items-center justify-end gap-2">
                                         @if($order->isPaid())
-                                            <a href="{{ route('student.courses.show', $order->course) }}" class="inline-flex items-center rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 transition">
-                                                Go to Course
-                                            </a>
+                                            @if($order->isBundleOrder())
+                                                <a href="{{ route('student.my-learning') }}" class="inline-flex items-center rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 transition">
+                                                    My Learning
+                                                </a>
+                                            @elseif($order->course)
+                                                <a href="{{ route('student.courses.show', $order->course) }}" class="inline-flex items-center rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 transition">
+                                                    Go to Course
+                                                </a>
+                                            @endif
                                         @elseif($order->isPending())
                                             <a href="{{ route('student.courses.checkout', $order) }}" class="inline-flex items-center rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition">
                                                 Pay Now

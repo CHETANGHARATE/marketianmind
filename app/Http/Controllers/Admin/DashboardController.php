@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\CourseStatus;
 use App\Enums\EnrollmentStatus;
+use App\Enums\LeadStatus;
 use App\Enums\OrderStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\Lead;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
@@ -56,6 +58,15 @@ class DashboardController extends Controller
         $totalRevenuePaise = $hasOrders ? (int) Order::where('status', OrderStatus::PAID->value)->sum('amount') : 0;
         $totalRevenue = round($totalRevenuePaise / 100, 2);
 
+        // Mini CRM / Lead Metrics
+        $hasLeads = Schema::hasTable('leads');
+        $totalLeads = $hasLeads ? Lead::count() : 0;
+        $newLeads = $hasLeads ? Lead::where('status', LeadStatus::NEW->value)->count() : 0;
+        $convertedLeads = $hasLeads ? Lead::where('status', LeadStatus::CONVERTED->value)->count() : 0;
+        $dueFollowUps = $hasLeads ? Lead::dueTodayFollowUps()->count() : 0;
+        $overdueFollowUps = $hasLeads ? Lead::overdueFollowUps()->count() : 0;
+        $leadConversionRate = $totalLeads > 0 ? round(($convertedLeads / $totalLeads) * 100, 1) : 0;
+
         $metrics = [
             'total_students' => $totalStudents,
             'new_students_30d' => $newStudents30d,
@@ -74,6 +85,12 @@ class DashboardController extends Controller
             'cancelled_orders' => $cancelledOrders,
             'total_revenue' => $totalRevenue,
             'formatted_revenue' => '₹' . number_format($totalRevenue, 2),
+            'total_leads' => $totalLeads,
+            'new_leads' => $newLeads,
+            'converted_leads' => $convertedLeads,
+            'due_follow_ups' => $dueFollowUps,
+            'overdue_follow_ups' => $overdueFollowUps,
+            'lead_conversion_rate' => $leadConversionRate,
         ];
 
         // Recent Activity Feeds (limited to latest 5, with eager loading)
@@ -99,6 +116,13 @@ class DashboardController extends Controller
                 ->get()
             : collect();
 
+        $recentLeads = $hasLeads
+            ? Lead::with(['course:id,title', 'bundle:id,title'])
+                ->latest()
+                ->take(5)
+                ->get()
+            : collect();
+
         $coursesOverview = $hasCourses
             ? Course::with('category:id,name')
                 ->withCount([
@@ -117,6 +141,7 @@ class DashboardController extends Controller
             'recentStudents',
             'recentOrders',
             'recentEnrollments',
+            'recentLeads',
             'coursesOverview'
         ));
     }

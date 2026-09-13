@@ -21,7 +21,7 @@ class OrderController extends Controller
         $statusFilter = $request->query('status');
 
         $query = $user->orders()
-            ->with(['course.category', 'payments'])
+            ->with(['course.category', 'bundle', 'payments'])
             ->latest();
 
         if ($statusFilter && in_array($statusFilter, $validStatuses, true)) {
@@ -47,9 +47,11 @@ class OrderController extends Controller
     {
         Gate::authorize('view', $order);
 
-        $order->load(['course.category', 'payments']);
+        $order->load(['course.category', 'bundle.courses', 'payments']);
 
-        $isEnrolled = $request->user()->isEnrolledIn($order->course);
+        $isEnrolled = $order->isBundleOrder() && $order->bundle
+            ? $order->bundle->hasUserAccess($request->user())
+            : ($order->course ? $request->user()->isEnrolledIn($order->course) : false);
 
         return view('student.orders.show', [
             'order' => $order,

@@ -33,9 +33,15 @@
                             <p class="mt-0.5 text-xs text-emerald-700">Your tuition is paid in full. You have lifetime access to all course lessons and curriculum materials.</p>
                         </div>
                     </div>
-                    <a href="{{ route('student.courses.show', $order->course) }}" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 transition shrink-0">
-                        Continue Learning &rarr;
-                    </a>
+                    @if($order->isBundleOrder())
+                        <a href="{{ route('student.my-learning') }}" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 transition shrink-0">
+                            Go to My Learning &rarr;
+                        </a>
+                    @elseif($order->course)
+                        <a href="{{ route('student.courses.show', $order->course) }}" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 transition shrink-0">
+                            Continue Learning &rarr;
+                        </a>
+                    @endif
                 </div>
             @else
                 <div class="rounded-2xl border border-amber-200/80 bg-amber-50/70 p-5 sm:p-6 shadow-xs flex items-start gap-3.5">
@@ -80,37 +86,67 @@
                         <p class="mt-0.5 text-xs text-rose-700">The recent transaction attempt for this order was not completed. No funds were debited, or your bank may reverse any temporary hold.</p>
                     </div>
                 </div>
-                <a href="{{ route('courses.show', $order->course) }}" class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-rose-500 transition shrink-0">
-                    Retry Purchase &rarr;
-                </a>
+                @if($order->isBundleOrder() && $order->bundle)
+                    <a href="{{ route('bundles.show', $order->bundle) }}" class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-rose-500 transition shrink-0">
+                        Retry Purchase &rarr;
+                    </a>
+                @elseif($order->course)
+                    <a href="{{ route('courses.show', $order->course) }}" class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-rose-500 transition shrink-0">
+                        Retry Purchase &rarr;
+                    </a>
+                @endif
             </div>
         @endif
     </div>
 
-    <!-- Course Information Summary Card (Hidden on Print) -->
+    <!-- Product Information Summary Card (Hidden on Print) -->
     <div class="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm print:hidden">
         <div class="flex flex-col sm:flex-row sm:items-center gap-5">
-            @if($order->course->thumbnailUrl())
-                <img src="{{ $order->course->thumbnailUrl() }}" alt="{{ $order->course->title }}" class="h-20 w-32 rounded-xl object-cover border border-slate-100 bg-slate-100 shrink-0">
+            @if($order->isBundleOrder() && $order->bundle)
+                @if($order->bundle->thumbnail_url)
+                    <img src="{{ $order->bundle->thumbnail_url }}" alt="{{ $order->bundle->title }}" class="h-20 w-32 rounded-xl object-cover border border-slate-100 bg-slate-100 shrink-0">
+                @else
+                    <div class="h-20 w-32 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 font-black text-lg shrink-0">
+                        PKG
+                    </div>
+                @endif
+                <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span class="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 border border-amber-200">
+                            Course Bundle
+                        </span>
+                        <span class="text-xs text-slate-400">Includes {{ $order->bundle->courses->count() }} Courses</span>
+                    </div>
+                    <h2 class="text-lg font-bold text-slate-900 truncate">{{ $order->bundle->title }}</h2>
+                    <p class="mt-1 text-xs text-slate-500 line-clamp-2">{{ $order->bundle->short_description }}</p>
+                </div>
+            @elseif($order->course)
+                @if($order->course->thumbnailUrl())
+                    <img src="{{ $order->course->thumbnailUrl() }}" alt="{{ $order->course->title }}" class="h-20 w-32 rounded-xl object-cover border border-slate-100 bg-slate-100 shrink-0">
+                @else
+                    <div class="h-20 w-32 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-black text-lg shrink-0">
+                        MM
+                    </div>
+                @endif
+                <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                        @if($order->course->category)
+                            <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-700 border border-indigo-100">
+                                {{ $order->course->category->name }}
+                            </span>
+                        @endif
+                        <span class="text-xs text-slate-400">Instructor: {{ $order->course->instructor_name ?? 'Marketian Mind Faculty' }}</span>
+                    </div>
+                    <h2 class="text-lg font-bold text-slate-900 truncate">{{ $order->course->title }}</h2>
+                    <p class="mt-1 text-xs text-slate-500 line-clamp-2">{{ $order->course->short_description }}</p>
+                </div>
             @else
-                <div class="h-20 w-32 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-black text-lg shrink-0">
-                    MM
+                <div class="flex-1 min-w-0">
+                    <h2 class="text-lg font-bold text-slate-900">{{ $order->productTitle() }}</h2>
                 </div>
             @endif
-            <div class="flex-1 min-w-0">
-                <div class="flex flex-wrap items-center gap-2 mb-1.5">
-                    @if($order->course->category)
-                        <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-700 border border-indigo-100">
-                            {{ $order->course->category->name }}
-                        </span>
-                    @endif
-                    <span class="text-xs text-slate-400">Instructor: {{ $order->course->instructor_name ?? 'Marketian Mind Faculty' }}</span>
-                </div>
-                <h2 class="text-lg font-bold text-slate-900 truncate">{{ $order->course->title }}</h2>
-                <p class="mt-1 text-xs text-slate-500 line-clamp-2">{{ $order->course->short_description }}</p>
-            </div>
             <div class="sm:text-right shrink-0">
-                <span class="text-xs text-slate-400 block font-medium">Course Tuition</span>
+                <span class="text-xs text-slate-400 block font-medium">Package Tuition</span>
                 <span class="text-xl font-bold text-slate-900">{{ $order->formattedAmount() }}</span>
             </div>
         </div>
@@ -165,8 +201,12 @@
                 <tbody class="divide-y divide-slate-100">
                     <tr>
                         <td class="py-4">
-                            <span class="font-bold text-slate-900 text-sm block">{{ $order->course->title }}</span>
-                            <span class="text-slate-500 text-xs">Full course tuition, self-paced curriculum, complete digital marketing modules &amp; certificate eligibility.</span>
+                            <span class="font-bold text-slate-900 text-sm block">{{ $order->productTitle() }}</span>
+                            @if($order->isBundleOrder() && $order->bundle)
+                                <span class="text-slate-500 text-xs">All-in-one package with lifetime access to all {{ $order->bundle->courses->count() }} courses included.</span>
+                            @else
+                                <span class="text-slate-500 text-xs">Full course tuition, self-paced curriculum, complete digital marketing modules &amp; certificate eligibility.</span>
+                            @endif
                         </td>
                         <td class="py-4 text-right font-bold text-slate-900 text-sm whitespace-nowrap">
                             {{ $order->formattedAmount() }}

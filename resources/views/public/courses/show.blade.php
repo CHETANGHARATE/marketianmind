@@ -151,6 +151,19 @@
                                 <div class="mt-2 flex items-baseline justify-center gap-2 flex-wrap">
                                     @if($course->is_free)
                                         <span class="text-3xl sm:text-4xl font-black text-emerald-600">Free</span>
+                                    @elseif($course->hasActiveOffer())
+                                        @php
+                                            $activeOffer = $course->currentOffer();
+                                            $promoFinalPrice = $course->finalPrice();
+                                            $promoSavings = $course->price - $promoFinalPrice;
+                                            $promoSavingsPct = $course->price > 0 ? round(($promoSavings / $course->price) * 100) : 0;
+                                        @endphp
+                                        <span class="text-3xl sm:text-4xl font-black text-slate-900">
+                                            ₹{{ number_format($promoFinalPrice, 2) }}
+                                        </span>
+                                        <span class="text-sm font-semibold text-slate-400 line-through">
+                                            ₹{{ number_format($course->price, 2) }}
+                                        </span>
                                     @else
                                         <span class="text-3xl sm:text-4xl font-black text-slate-900">
                                             ₹{{ number_format($course->effectivePrice(), 2) }}
@@ -164,7 +177,18 @@
                                     @endif
                                 </div>
 
-                                @if($hasSavings)
+                                @if(! $course->is_free && $course->hasActiveOffer())
+                                    <div class="mt-2 flex flex-col items-center gap-1">
+                                        <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-700 border border-amber-200">
+                                            {{ $activeOffer->displayBadge() }} &bull; Save ₹{{ number_format($promoSavings, 0) }} ({{ $promoSavingsPct }}% OFF)
+                                        </span>
+                                        @if($activeOffer->ends_at)
+                                            <span class="text-[11px] font-medium text-amber-700">
+                                                Offer ends {{ $activeOffer->ends_at->format('M d, Y') }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                @elseif($hasSavings)
                                     <div class="mt-2">
                                         <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-100">
                                             Save ₹{{ number_format($savingsAmount, 0) }} ({{ $savingsPercentage }}% OFF)
@@ -246,7 +270,7 @@
                                             <form action="{{ route('student.courses.purchase', $course) }}" method="POST">
                                                 @csrf
                                                 <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-xs hover:bg-indigo-500 transition cursor-pointer text-center">
-                                                    Buy Now &rarr;
+                                                    {{ $ctaVariant?->getConfigValue('button_text') ?? 'Buy Now →' }}
                                                 </button>
                                             </form>
                                         @else
@@ -256,12 +280,17 @@
                                         @endif
                                     @else
                                         <a href="{{ route('login') }}" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-xs hover:bg-indigo-500 transition text-center font-bold">
-                                            Buy Now &rarr;
+                                            {{ $ctaVariant?->getConfigValue('button_text') ?? 'Buy Now →' }}
                                         </a>
                                         <p class="mt-2.5 text-center text-xs text-slate-400">
                                             New here? <a href="{{ route('register') }}" class="text-indigo-600 font-semibold underline">Create free account</a>
                                         </p>
                                     @endauth
+                                    @if($ctaVariant && $ctaVariant->getConfigValue('supporting_message'))
+                                        <p class="mt-2 text-center text-xs font-semibold text-amber-600">
+                                            {{ $ctaVariant->getConfigValue('supporting_message') }}
+                                        </p>
+                                    @endif
                                 @endif
                             </div>
 

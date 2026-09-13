@@ -434,5 +434,111 @@
             @endif
         </div>
     </div>
+
+    <!-- Mini CRM & Customer Pipeline Section -->
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-400 border border-amber-500/20">
+                        Lead Management
+                    </span>
+                    <span class="text-xs text-slate-400">Prospect-to-Student Pipeline</span>
+                </div>
+                <h2 class="text-base font-bold text-white tracking-tight mt-1">
+                    Inbound Leads &amp; Mini CRM Overview
+                </h2>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('admin.leads.create') }}" class="rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-bold text-slate-950 hover:bg-amber-400 transition">
+                    + Add Lead
+                </a>
+                <a href="{{ route('admin.leads.index') }}" class="text-xs font-semibold text-amber-400 hover:text-amber-300 transition">
+                    Full CRM Pipeline &rarr;
+                </a>
+            </div>
+        </div>
+
+        <!-- CRM KPI mini grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 py-4 border-b border-slate-800/60">
+            <div class="rounded-xl bg-slate-950/60 p-3 border border-slate-800">
+                <span class="text-[11px] text-slate-400 font-semibold uppercase">Total Leads</span>
+                <div class="text-xl font-bold text-white mt-1">{{ number_format($metrics['total_leads'] ?? 0) }}</div>
+            </div>
+            <div class="rounded-xl bg-slate-950/60 p-3 border border-slate-800">
+                <span class="text-[11px] text-amber-400 font-semibold uppercase">New / Uncontacted</span>
+                <div class="text-xl font-bold text-amber-400 mt-1">{{ number_format($metrics['new_leads'] ?? 0) }}</div>
+            </div>
+            <div class="rounded-xl bg-slate-950/60 p-3 border border-slate-800">
+                <span class="text-[11px] text-emerald-400 font-semibold uppercase">Converted Students</span>
+                <div class="text-xl font-bold text-emerald-400 mt-1">{{ number_format($metrics['converted_leads'] ?? 0) }} ({{ $metrics['lead_conversion_rate'] ?? 0 }}%)</div>
+            </div>
+            <div class="rounded-xl bg-slate-950/60 p-3 border border-slate-800">
+                <span class="text-[11px] text-rose-400 font-semibold uppercase">Follow-Ups Today / Overdue</span>
+                <div class="text-xl font-bold text-rose-400 mt-1">{{ number_format($metrics['due_follow_ups'] ?? 0) }} / {{ number_format($metrics['overdue_follow_ups'] ?? 0) }}</div>
+            </div>
+        </div>
+
+        <!-- Recent Leads Table -->
+        <div class="mt-4">
+            @if($recentLeads->isEmpty())
+                <div class="py-8 text-center text-xs text-slate-500">
+                    No leads or prospective student inquiries logged yet.
+                </div>
+            @else
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                                <th class="py-2.5 pr-4">Prospect</th>
+                                <th class="py-2.5 px-3">Interest</th>
+                                <th class="py-2.5 px-3">Priority</th>
+                                <th class="py-2.5 px-3">Status</th>
+                                <th class="py-2.5 px-3">Date</th>
+                                <th class="py-2.5 pl-3 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/60">
+                            @foreach($recentLeads as $lead)
+                                <tr class="hover:bg-slate-800/40 transition">
+                                    <td class="py-3 pr-4">
+                                        <div class="font-bold text-white">{{ $lead->name }}</div>
+                                        <div class="text-[11px] text-slate-400">{{ $lead->email }}</div>
+                                    </td>
+                                    <td class="py-3 px-3">
+                                        @if($lead->course)
+                                            <span class="text-indigo-400 font-semibold truncate block max-w-[150px]">{{ $lead->course->title }}</span>
+                                        @elseif($lead->bundle)
+                                            <span class="text-purple-400 font-semibold truncate block max-w-[150px]">{{ $lead->bundle->title }}</span>
+                                        @else
+                                            <span class="text-slate-400">General</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-3 px-3">
+                                        <span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold border {{ $lead->priority->badgeClasses() }}">
+                                            {{ $lead->priority->label() }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-3">
+                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border {{ $lead->status->badgeClasses() }}">
+                                            {{ $lead->status->label() }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-3 text-slate-400">
+                                        {{ $lead->created_at->diffForHumans() }}
+                                    </td>
+                                    <td class="py-3 pl-3 text-right">
+                                        <a href="{{ route('admin.leads.show', $lead) }}" class="rounded-lg bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition">
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+    </div>
 </div>
 @endsection

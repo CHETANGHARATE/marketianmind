@@ -12,8 +12,8 @@
             <span class="info-value">#{{ $order->order_number ?? $order->id }}</span>
         </div>
         <div class="info-row">
-            <span class="info-label">Course</span>
-            <span class="info-value">{{ $order->course ? $order->course->title : 'Course Access' }}</span>
+            <span class="info-label">{{ $order->isBundleOrder() ? 'Bundle' : 'Course' }}</span>
+            <span class="info-value">{{ $order->productTitle() }}</span>
         </div>
         <div class="info-row">
             <span class="info-label">Date</span>
