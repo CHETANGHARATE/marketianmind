@@ -7,6 +7,7 @@ enum EnrollmentStatus: string
     case ACTIVE = 'active';
     case COMPLETED = 'completed';
     case CANCELLED = 'cancelled';
+    case EXPIRED = 'expired';
 
     /**
      * Get a human-readable display label for the status.
@@ -17,6 +18,7 @@ enum EnrollmentStatus: string
             self::ACTIVE => 'Active',
             self::COMPLETED => 'Completed',
             self::CANCELLED => 'Cancelled',
+            self::EXPIRED => 'Expired',
         };
     }
 

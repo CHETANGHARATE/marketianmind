@@ -48,7 +48,7 @@ class MarketingConversionTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('30-Day Guarantee');
-        $response->assertSee('Lifetime Access');
+        $response->assertSee('Full-Year Access');
         $response->assertSee('Verified Certificate');
         $response->assertSee('Frequently Asked Questions');
         $response->assertSee('Do I need prior marketing or technical experience?');

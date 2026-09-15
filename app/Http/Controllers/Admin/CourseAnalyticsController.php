@@ -45,6 +45,15 @@ class CourseAnalyticsController extends Controller
         $totalRevenuePaise = (int) Order::where('status', OrderStatus::PAID->value)->sum('amount');
         $totalRevenue = round($totalRevenuePaise / 100, 2);
 
+        $totalRenewalsCount = \App\Models\CourseAccessPeriod::where('period_type', 'renewal')->count();
+        $totalRenewalRevenuePaise = (int) Order::where('status', OrderStatus::PAID->value)
+            ->where(function ($q) {
+                $q->where('metadata->purchase_type', 'renewal')
+                  ->orWhereHas('accessPeriods', fn ($p) => $p->where('period_type', 'renewal'));
+            })
+            ->sum('amount');
+        $totalRenewalRevenue = round($totalRenewalRevenuePaise / 100, 2);
+
         $overviewMetrics = [
             'total_courses' => $totalCourses,
             'published_courses' => $publishedCourses,
@@ -54,6 +63,9 @@ class CourseAnalyticsController extends Controller
             'completion_rate' => $completionRate,
             'total_revenue' => $totalRevenue,
             'formatted_revenue' => '₹' . number_format($totalRevenue, 2),
+            'total_renewals' => $totalRenewalsCount,
+            'total_renewal_revenue' => $totalRenewalRevenue,
+            'formatted_renewal_revenue' => '₹' . number_format($totalRenewalRevenue, 2),
         ];
 
         // Course query with subquery aggregates to prevent N+1 queries
@@ -289,6 +301,34 @@ class CourseAnalyticsController extends Controller
         $enrollmentsLast30Days = $course->enrollments()->where('enrolled_at', '>=', now()->subDays(30))->count();
         $certificatesIssued = Certificate::where('course_id', $course->id)->count();
 
+        // Course Renewal Metrics
+        $renewalPeriodsCount = \App\Models\CourseAccessPeriod::where('period_type', 'renewal')
+            ->whereHas('enrollment', fn ($q) => $q->where('course_id', $course->id))
+            ->count();
+
+        $renewalOrdersQuery = Order::where('course_id', $course->id)
+            ->where('status', OrderStatus::PAID->value)
+            ->where(function ($q) {
+                $q->where('metadata->purchase_type', 'renewal')
+                  ->orWhereHas('accessPeriods', fn ($p) => $p->where('period_type', 'renewal'));
+            });
+        $renewalRevenuePaise = (int) $renewalOrdersQuery->sum('amount');
+        $renewalRevenue = round($renewalRevenuePaise / 100, 2);
+        $renewalsCount = max($renewalOrdersQuery->count(), $renewalPeriodsCount);
+
+        $finiteEnrollmentsCount = $course->enrollments()
+            ->whereNotNull('starts_at')
+            ->whereNotNull('expires_at')
+            ->count();
+
+        $expiringFiniteCount = $course->enrollments()
+            ->whereNotNull('starts_at')
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', now()->addDays(30))
+            ->count();
+
+        $courseRenewalRate = $expiringFiniteCount > 0 ? round(($renewalsCount / $expiringFiniteCount) * 100, 1) : 0.0;
+
         // 5. Progress Distribution Breakdown
         $enrolledUserIds = $course->enrollments()->pluck('user_id')->all();
         $distributionCounts = [
@@ -462,6 +502,11 @@ class CourseAnalyticsController extends Controller
             'paid_orders_count' => $paidOrdersCount,
             'pending_orders_count' => $pendingOrdersCount,
             'failed_orders_count' => $failedOrdersCount,
+            'renewals_count' => $renewalsCount,
+            'renewal_revenue' => $renewalRevenue,
+            'formatted_renewal_revenue' => '₹' . number_format($renewalRevenue, 2),
+            'renewal_rate' => $courseRenewalRate,
+            'finite_enrollments' => $finiteEnrollmentsCount,
         ];
 
         return view('admin.analytics.courses.show', [

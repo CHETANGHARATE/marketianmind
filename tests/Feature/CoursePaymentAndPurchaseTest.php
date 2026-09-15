@@ -119,7 +119,7 @@ class CoursePaymentAndPurchaseTest extends TestCase
         ]);
     }
 
-    public function test_already_enrolled_student_cannot_purchase_course_again(): void
+    public function test_already_enrolled_student_can_initiate_renewal_purchase_order(): void
     {
         Enrollment::create([
             'user_id' => $this->student->id,
@@ -131,11 +131,13 @@ class CoursePaymentAndPurchaseTest extends TestCase
         $response = $this->actingAs($this->student)
             ->post(route('student.courses.purchase', $this->paidCourse));
 
-        $response->assertRedirect(route('student.courses.show', $this->paidCourse));
-        $this->assertDatabaseMissing('orders', [
-            'user_id' => $this->student->id,
-            'course_id' => $this->paidCourse->id,
-        ]);
+        $order = Order::where('user_id', $this->student->id)
+            ->where('course_id', $this->paidCourse->id)
+            ->first();
+
+        $this->assertNotNull($order);
+        $this->assertTrue($order->isRenewal());
+        $response->assertRedirect(route('student.courses.checkout', $order));
     }
 
     public function test_student_can_initiate_purchase_and_order_amount_is_calculated_server_side(): void

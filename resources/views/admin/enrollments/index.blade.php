@@ -7,15 +7,15 @@
         <div>
             <div class="flex items-center gap-2.5">
                 <span class="inline-flex items-center rounded-md bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-400 ring-1 ring-inset ring-amber-500/20">
-                    Curriculum Engagement
+                    Curriculum & Access Governance
                 </span>
-                <span class="text-xs text-slate-500">Student Course Access</span>
+                <span class="text-xs text-slate-500">Student Course Access & Renewals</span>
             </div>
             <h1 class="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-white">
                 Course Enrollments
             </h1>
             <p class="mt-1 text-sm text-slate-400">
-                Monitor, search, and inspect learner course enrollments, completion states, and progress.
+                Course Access & Renewals &bull; Monitor student access lifecycles, inspect validity windows, review renewal history, and manage manual access grants.
             </p>
         </div>
 
@@ -28,24 +28,42 @@
 
     <!-- Filter Tabs & Controls -->
     <div class="space-y-4">
-        <!-- Status Filter Tabs -->
+        <!-- Status / Access Filter Tabs -->
         <div class="flex flex-wrap items-center gap-2 border-b border-slate-800/80 pb-3">
             <a href="{{ route('admin.enrollments.index', array_merge(request()->except(['status', 'completion', 'page']), ['status' => 'all'])) }}"
                class="px-3.5 py-2 rounded-xl text-xs font-semibold transition {{ $status === 'all' && $completion === 'all' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' }}">
                 All ({{ number_format($counts['all']) }})
             </a>
             <a href="{{ route('admin.enrollments.index', array_merge(request()->except(['status', 'completion', 'page']), ['status' => 'active'])) }}"
-               class="px-3.5 py-2 rounded-xl text-xs font-semibold transition {{ $status === 'active' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' }}">
-                Active ({{ number_format($counts['active']) }})
+               class="px-3.5 py-2 rounded-xl text-xs font-semibold transition {{ $status === 'active' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' }}">
+                Active Access ({{ number_format($counts['active']) }})
+            </a>
+            <a href="{{ route('admin.enrollments.index', array_merge(request()->except(['status', 'completion', 'page']), ['status' => 'expiring'])) }}"
+               class="px-3.5 py-2 rounded-xl text-xs font-semibold transition {{ $status === 'expiring' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' }}">
+                Expiring Soon ({{ number_format($counts['expiring']) }})
+            </a>
+            <a href="{{ route('admin.enrollments.index', array_merge(request()->except(['status', 'completion', 'page']), ['status' => 'expired'])) }}"
+               class="px-3.5 py-2 rounded-xl text-xs font-semibold transition {{ $status === 'expired' ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' }}">
+                Expired ({{ number_format($counts['expired']) }})
+            </a>
+            <a href="{{ route('admin.enrollments.index', array_merge(request()->except(['status', 'completion', 'page']), ['status' => 'lifetime'])) }}"
+               class="px-3.5 py-2 rounded-xl text-xs font-semibold transition {{ $status === 'lifetime' ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' }}">
+                Legacy Lifetime ({{ number_format($counts['lifetime']) }})
             </a>
             <a href="{{ route('admin.enrollments.index', array_merge(request()->except(['status', 'completion', 'page']), ['status' => 'completed'])) }}"
-               class="px-3.5 py-2 rounded-xl text-xs font-semibold transition {{ $status === 'completed' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' }}">
+               class="px-3.5 py-2 rounded-xl text-xs font-semibold transition {{ $status === 'completed' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' }}">
                 Completed ({{ number_format($counts['completed']) }})
             </a>
             @if($counts['cancelled'] > 0)
                 <a href="{{ route('admin.enrollments.index', array_merge(request()->except(['status', 'completion', 'page']), ['status' => 'cancelled'])) }}"
-                   class="px-3.5 py-2 rounded-xl text-xs font-semibold transition {{ $status === 'cancelled' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' }}">
+                   class="px-3.5 py-2 rounded-xl text-xs font-semibold transition {{ $status === 'cancelled' ? 'bg-slate-700/50 text-slate-300 border border-slate-600/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' }}">
                     Cancelled ({{ number_format($counts['cancelled']) }})
+                </a>
+            @endif
+            @if($counts['anomalous'] > 0)
+                <a href="{{ route('admin.enrollments.index', array_merge(request()->except(['status', 'completion', 'page']), ['status' => 'anomalous'])) }}"
+                   class="px-3.5 py-2 rounded-xl text-xs font-semibold transition {{ $status === 'anomalous' ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' }}">
+                    Needs Review ({{ number_format($counts['anomalous']) }})
                 </a>
             @endif
         </div>
@@ -56,7 +74,7 @@
                 <input type="hidden" name="status" value="{{ $status }}">
             @endif
 
-            <!-- Search Input (6 cols) -->
+            <!-- Search Input (5 cols) -->
             <div class="sm:col-span-5 relative">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -100,6 +118,7 @@
                         class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-300 focus:border-amber-500 focus:outline-hidden focus:ring-1 focus:ring-amber-500">
                     <option value="newest" {{ $sort === 'newest' ? 'selected' : '' }}>Newest Enrolled</option>
                     <option value="oldest" {{ $sort === 'oldest' ? 'selected' : '' }}>Oldest Enrolled</option>
+                    <option value="expiring_soon" {{ $sort === 'expiring_soon' ? 'selected' : '' }}>Expiring Soonest</option>
                     <option value="student_asc" {{ $sort === 'student_asc' ? 'selected' : '' }}>Student (A &rarr; Z)</option>
                     <option value="student_desc" {{ $sort === 'student_desc' ? 'selected' : '' }}>Student (Z &rarr; A)</option>
                     <option value="course_asc" {{ $sort === 'course_asc' ? 'selected' : '' }}>Course (A &rarr; Z)</option>
@@ -142,8 +161,8 @@
                         <tr class="border-b border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-400 bg-slate-950/40">
                             <th class="py-3.5 pl-6 pr-4">Student</th>
                             <th class="py-3.5 px-4">Course</th>
-                            <th class="py-3.5 px-4">Enrolled At</th>
-                            <th class="py-3.5 px-4 w-44">Learning Progress</th>
+                            <th class="py-3.5 px-4">Access Lifecycle</th>
+                            <th class="py-3.5 px-4 w-40">Learning Progress</th>
                             <th class="py-3.5 px-4 text-center">Status</th>
                             <th class="py-3.5 px-4 text-center">Certificate</th>
                             <th class="py-3.5 pr-6 text-right">Actions</th>
@@ -156,6 +175,7 @@
                                 $percentage = $prog['percentage'] ?? 0;
                                 $isCompleted = ($enrollment->status?->value ?? $enrollment->status) === 'completed' || ($prog['is_completed'] ?? false);
                                 $hasCert = $enrollment->certificate !== null;
+                                $adminBadge = $enrollment->getAdminAccessBadgeDetails();
                             @endphp
                             <tr class="hover:bg-slate-800/40 transition">
                                 <!-- Student Column -->
@@ -192,10 +212,27 @@
                                     </div>
                                 </td>
 
-                                <!-- Enrolled Date -->
-                                <td class="py-4 px-4 text-slate-300">
-                                    <div>{{ $enrollment->enrolled_at?->format('M d, Y') ?? $enrollment->created_at?->format('M d, Y') }}</div>
-                                    <div class="text-[10px] text-slate-500">{{ ($enrollment->enrolled_at ?? $enrollment->created_at)?->diffForHumans() }}</div>
+                                <!-- Access Lifecycle Column -->
+                                <td class="py-4 px-4">
+                                    <div class="space-y-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider {{ $adminBadge['classes'] }}">
+                                            {{ $adminBadge['label'] }}
+                                        </span>
+                                        <div class="text-[11px]">
+                                            @if($enrollment->isLegacyLifetimeAccess())
+                                                <span class="text-indigo-300">Permanent Access</span>
+                                            @elseif($enrollment->expires_at)
+                                                <span class="{{ $enrollment->isAccessExpired() ? 'text-rose-400' : ($enrollment->isExpiringSoon(30) ? 'text-amber-400' : 'text-slate-300') }}">
+                                                    Expires: {{ $enrollment->expires_at->format('M d, Y') }}
+                                                </span>
+                                                <div class="text-[10px] text-slate-500">
+                                                    {{ $enrollment->getRemainingDaysText() }}
+                                                </div>
+                                            @else
+                                                <span class="text-slate-500">No expiration set</span>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </td>
 
                                 <!-- Progress Bar -->
@@ -219,6 +256,7 @@
                                         $badgeStyle = match($enrStatus) {
                                             'completed' => 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30',
                                             'cancelled' => 'bg-rose-500/10 text-rose-400 border border-rose-500/30',
+                                            'expired' => 'bg-rose-500/10 text-rose-400 border border-rose-500/30',
                                             default => 'bg-blue-500/10 text-blue-400 border border-blue-500/30',
                                         };
                                     @endphp
@@ -242,9 +280,9 @@
                                 <td class="py-4 pr-6 text-right">
                                     <a href="{{ route('admin.enrollments.show', $enrollment) }}"
                                        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:border-amber-500/50 hover:bg-slate-700 hover:text-white transition">
-                                        <span>Inspect</span>
+                                        <span>Inspect & Manage</span>
                                         <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                         </svg>
                                     </a>
                                 </td>

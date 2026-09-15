@@ -60,7 +60,7 @@
     </div>
 
     <!-- KPI Metrics Grid -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <!-- Metric: Total Revenue -->
         <div class="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-slate-900 to-slate-950 p-5 shadow-sm">
             <div class="flex items-center justify-between">
@@ -144,6 +144,27 @@
                 </div>
             </div>
         </div>
+
+        <!-- Metric: Course Renewals -->
+        <a href="{{ route('admin.reports.renewals') }}" class="group block rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-sm hover:border-amber-500/50 transition">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-amber-400 group-hover:text-amber-300 transition">Renewals</span>
+                <span class="rounded-lg bg-amber-500/10 p-2 text-amber-400 group-hover:bg-amber-500/20 transition">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                </span>
+            </div>
+            <div class="mt-4">
+                <div class="text-2xl font-black tracking-tight text-white">
+                    {{ $metrics['renewals_this_month'] ?? 0 }}
+                </div>
+                <div class="mt-1 flex items-center justify-between text-[11px] text-slate-400">
+                    <span class="text-emerald-400 font-medium">{{ $metrics['formatted_renewal_revenue'] ?? '₹0.00' }}</span>
+                    <span class="text-amber-400">{{ $metrics['expiring_soon'] ?? 0 }} expiring</span>
+                </div>
+            </div>
+        </a>
 
         <!-- Metric: Orders Overview -->
         <div class="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-sm">

@@ -60,8 +60,8 @@
                     <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-600 mb-2">
                         <span>Secure Checkout</span>
                         <span>&bull;</span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold {{ $order->isBundleOrder() ? 'bg-amber-100 text-amber-800' : 'bg-indigo-100 text-indigo-800' }}">
-                            {{ $order->productTypeLabel() }}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold {{ $order->isBundleOrder() ? 'bg-amber-100 text-amber-800' : ($order->isRenewal() ? 'bg-emerald-100 text-emerald-800' : 'bg-indigo-100 text-indigo-800') }}">
+                            {{ $order->isRenewal() ? 'Course Renewal' : $order->productTypeLabel() }}
                         </span>
                         <span>&bull;</span>
                         <span class="text-slate-400">Order #{{ $order->order_number }}</span>
@@ -114,7 +114,7 @@
                                 </span>
                             @endif
                             <span class="inline-flex items-center gap-1">
-                                <span class="font-semibold text-slate-700">Access:</span> Lifetime
+                                <span class="font-semibold text-slate-700">Access:</span> {{ $course->accessDurationLabel() }}
                             </span>
                         </div>
                     @endif
@@ -273,7 +273,10 @@
                     </div>
 
                     <div class="py-4 flex items-center justify-between">
-                        <span class="text-sm font-bold text-slate-900">Total Due Today</span>
+                        <div>
+                            <span class="text-sm font-bold text-slate-900 block">Total Due Today</span>
+                            <span class="text-[11px] text-slate-500 font-medium">One-time payment &bull; {{ $course ? $course->accessDurationLabel() : 'Full Access' }}</span>
+                        </div>
                         <span class="text-2xl font-black text-slate-900">{{ $order->formattedAmount() }}</span>
                     </div>
 
@@ -281,19 +284,19 @@
                     <div class="mt-4 space-y-3">
                         @if($order->amount > 0)
                             <button type="button" id="rzp-button" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-500 transition cursor-pointer">
-                                Pay {{ $order->formattedAmount() }} Now &rarr;
+                                {{ $order->isRenewal() ? 'Renew Access (Pay ' . $order->formattedAmount() . ') →' : 'Pay ' . $order->formattedAmount() . ' Now →' }}
                             </button>
                         @else
                             <form action="{{ route('student.courses.checkout.complete-free', $order) }}" method="POST">
                                 @csrf
                                 <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-500 transition cursor-pointer">
-                                    Complete Free Enrollment &rarr;
+                                    {{ $order->isRenewal() ? 'Complete Free Renewal →' : 'Complete Free Enrollment →' }}
                                 </button>
                             </form>
                         @endif
 
                         <div class="text-center text-[11px] text-slate-400">
-                            By enrolling, you accept lifetime platform access terms.
+                            One-time payment with no recurring charges. By completing your purchase, you agree to Marketian Mind's terms of service.
                         </div>
                     </div>
 

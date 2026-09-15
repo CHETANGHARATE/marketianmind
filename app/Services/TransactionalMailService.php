@@ -78,6 +78,30 @@ class TransactionalMailService
     }
 
     /**
+     * Send course expiring soon reminder email.
+     */
+    public function sendCourseExpiringSoon(User $user, Course $course, int $daysRemaining, ?\Carbon\CarbonInterface $expiresAt = null, ?\App\Models\CourseAccessPeriod $accessPeriod = null): bool
+    {
+        return $this->safelySend($user->email, new \App\Mail\CourseExpiringSoonMail($user, $course, $daysRemaining, $expiresAt, $accessPeriod));
+    }
+
+    /**
+     * Send course access expired notification email.
+     */
+    public function sendCourseAccessExpired(User $user, Course $course, ?\App\Models\CourseAccessPeriod $accessPeriod = null): bool
+    {
+        return $this->safelySend($user->email, new \App\Mail\CourseAccessExpiredMail($user, $course, $accessPeriod));
+    }
+
+    /**
+     * Send course renewal success confirmation email.
+     */
+    public function sendCourseRenewalSuccess(User $user, Course $course, \App\Models\CourseAccessPeriod $accessPeriod, ?Order $order = null): bool
+    {
+        return $this->safelySend($user->email, new \App\Mail\CourseRenewalSuccessMail($user, $course, $accessPeriod, $order));
+    }
+
+    /**
      * Send test email to verify SMTP configuration.
      */
     public function sendTestMail(string $toEmail): bool

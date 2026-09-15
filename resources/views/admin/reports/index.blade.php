@@ -23,6 +23,10 @@
                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition">
                 <span>Enrollments CSV</span>
             </a>
+            <a href="{{ route('admin.reports.export.renewals', request()->query()) }}"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition">
+                <span>Renewals CSV</span>
+            </a>
         </div>
     </div>
 

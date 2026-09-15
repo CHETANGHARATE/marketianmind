@@ -289,10 +289,10 @@ class CourseController extends Controller
         $isCompleted = false;
         $progress = ['total' => 0, 'completed' => 0, 'percentage' => 0, 'is_completed' => false];
 
+        $enrollment = null;
         if ($user && $user->isStudent() && $course && Schema::hasTable('enrollments')) {
             $enrollment = $user->enrollments()
                 ->where('course_id', $course->id)
-                ->whereIn('status', [EnrollmentStatus::ACTIVE->value, EnrollmentStatus::COMPLETED->value])
                 ->first();
 
             if ($enrollment) {
@@ -407,6 +407,7 @@ class CourseController extends Controller
         return view('public.courses.show', [
             'course' => $course,
             'isEnrolled' => $isEnrolled,
+            'enrollment' => $enrollment,
             'isCompleted' => $isCompleted,
             'certificate' => $certificate,
             'progress' => $progress,

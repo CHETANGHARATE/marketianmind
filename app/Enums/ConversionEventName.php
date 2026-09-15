@@ -18,6 +18,16 @@ enum ConversionEventName: string
     case BUNDLE_PURCHASED = 'bundle_purchased';
     case CERTIFICATE_DOWNLOAD = 'certificate_download';
     case CONTACT_CLICK = 'contact_click';
+    case COURSE_ACCESS_EXPIRING = 'course_access_expiring';
+    case COURSE_ACCESS_EXPIRED = 'course_access_expired';
+    case RENEWAL_CHECKOUT_STARTED = 'renewal_checkout_started';
+    case RENEWAL_PAYMENT_INITIATED = 'renewal_payment_initiated';
+    case RENEWAL_PAYMENT_SUCCESS = 'renewal_payment_success';
+    case RENEWAL_PAYMENT_FAILED = 'renewal_payment_failed';
+    case RENEWAL_FULFILLED = 'renewal_fulfilled';
+    case COURSE_ACCESS_RENEWED = 'course_access_renewed';
+    case RENEWAL_NOTIFICATION_SENT = 'renewal_notification_sent';
+    case RENEWAL_NOTIFICATION_FAILED = 'renewal_notification_failed';
 
     public function label(): string
     {
@@ -36,6 +46,16 @@ enum ConversionEventName: string
             self::BUNDLE_PURCHASED => 'Bundle Purchased',
             self::CERTIFICATE_DOWNLOAD => 'Certificate Downloaded',
             self::CONTACT_CLICK => 'Contact Click',
+            self::COURSE_ACCESS_EXPIRING => 'Course Access Expiring',
+            self::COURSE_ACCESS_EXPIRED => 'Course Access Expired',
+            self::RENEWAL_CHECKOUT_STARTED => 'Renewal Checkout Started',
+            self::RENEWAL_PAYMENT_INITIATED => 'Renewal Payment Initiated',
+            self::RENEWAL_PAYMENT_SUCCESS => 'Renewal Payment Success',
+            self::RENEWAL_PAYMENT_FAILED => 'Renewal Payment Failed',
+            self::RENEWAL_FULFILLED => 'Renewal Fulfilled',
+            self::COURSE_ACCESS_RENEWED => 'Course Access Renewed',
+            self::RENEWAL_NOTIFICATION_SENT => 'Renewal Notification Sent',
+            self::RENEWAL_NOTIFICATION_FAILED => 'Renewal Notification Failed',
         };
     }
 

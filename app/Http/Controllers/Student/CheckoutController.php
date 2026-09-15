@@ -37,10 +37,12 @@ class CheckoutController extends Controller
                 ->with('status', 'This is a free course. You can enroll immediately!');
         }
 
-        if ($user->isEnrolledIn($course)) {
+        $purchaseType = $user->getCoursePurchaseType($course);
+
+        if ($purchaseType === \App\Enums\CoursePurchaseType::NOT_ELIGIBLE) {
             return redirect()
-                ->route('student.courses.show', $course)
-                ->with('status', 'You are already enrolled in this course.');
+                ->route('courses.show', $course)
+                ->with('error', 'Your enrollment in this course has been cancelled. Please contact support.');
         }
 
         // Authoritative server-side pricing resolution
@@ -74,7 +76,10 @@ class CheckoutController extends Controller
                 'amount' => $payableAmountInPaise,
                 'currency' => 'INR',
                 'status' => OrderStatus::PENDING,
-                'metadata' => ['pricing_snapshot' => $pricing],
+                'metadata' => [
+                    'pricing_snapshot' => $pricing,
+                    'purchase_type' => $purchaseType->value,
+                ],
             ]);
         } else {
             // Update reused order if it has no coupon applied
@@ -84,7 +89,10 @@ class CheckoutController extends Controller
                     'offer_id' => $offerId,
                     'offer_discount_amount' => $offerDiscountInPaise,
                     'amount' => $payableAmountInPaise,
-                    'metadata' => array_merge($order->metadata ?? [], ['pricing_snapshot' => $pricing]),
+                    'metadata' => array_merge($order->metadata ?? [], [
+                        'pricing_snapshot' => $pricing,
+                        'purchase_type' => $purchaseType->value,
+                    ]),
                 ]);
             }
         }
@@ -229,6 +237,34 @@ class CheckoutController extends Controller
             ]
         );
 
+        if ($order->isRenewal()) {
+            app(\App\Services\ConversionTrackingService::class)->track(
+                \App\Enums\ConversionEventName::RENEWAL_CHECKOUT_STARTED,
+                [
+                    'course_id' => $order->course_id,
+                    'user_id' => $request->user()->id,
+                    'metadata' => [
+                        'order_id' => $order->id,
+                        'amount' => $order->amount,
+                    ],
+                ]
+            );
+
+            if ($course) {
+                app(\App\Services\RenewalAnalyticsService::class)->logCrmRenewalActivity(
+                    $request->user(),
+                    $course,
+                    'renewal_checkout_started',
+                    "Student started renewal checkout for course: {$course->title}",
+                    [
+                        'order_id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'amount' => round(((int) $order->amount) / 100, 2),
+                    ]
+                );
+            }
+        }
+
         return view('student.checkout', compact('order', 'course', 'bundle', 'keyId'));
     }
 
@@ -338,45 +374,8 @@ class CheckoutController extends Controller
                 \App\Models\Offer::where('id', $lockedOrder->offer_id)->increment('times_used');
             }
 
-            // Grant active enrollments
-            if ($lockedOrder->isBundleOrder() && $lockedOrder->bundle) {
-                foreach ($lockedOrder->bundle->publishedCourses as $bCourse) {
-                    $enrollment = Enrollment::query()
-                        ->where('user_id', $user->id)
-                        ->where('course_id', $bCourse->id)
-                        ->first();
-
-                    if (! $enrollment) {
-                        Enrollment::create([
-                            'user_id' => $user->id,
-                            'course_id' => $bCourse->id,
-                            'status' => EnrollmentStatus::ACTIVE,
-                            'enrolled_at' => now(),
-                        ]);
-                        app(\App\Services\EngagementService::class)->handleEnrollment($user, $bCourse, true);
-                    } elseif (! $enrollment->isActive() && ! $enrollment->isCompleted()) {
-                        $enrollment->update([
-                            'status' => EnrollmentStatus::ACTIVE,
-                            'enrolled_at' => now(),
-                        ]);
-                    }
-                }
-            } elseif ($lockedOrder->course_id) {
-                Enrollment::firstOrCreate(
-                    [
-                        'user_id' => $user->id,
-                        'course_id' => $lockedOrder->course_id,
-                    ],
-                    [
-                        'status' => EnrollmentStatus::ACTIVE,
-                        'enrolled_at' => now(),
-                    ]
-                );
-
-                if ($lockedOrder->course) {
-                    app(\App\Services\EngagementService::class)->handleEnrollment($user, $lockedOrder->course, true);
-                }
-            }
+            // Authoritative Order Fulfillment
+            app(\App\Services\OrderFulfillmentService::class)->fulfillOrder($lockedOrder);
 
             $user->notify(new \App\Notifications\PaymentSuccessNotification($lockedOrder));
             app(\App\Services\TransactionalMailService::class)->sendOrderConfirmation($lockedOrder);

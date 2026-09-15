@@ -102,7 +102,7 @@ class User extends Authenticatable
     public function enrolledCourses(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(Course::class, 'enrollments')
-            ->withPivot(['status', 'enrolled_at', 'completed_at'])
+            ->withPivot(['id', 'status', 'starts_at', 'expires_at', 'enrolled_at', 'completed_at'])
             ->withTimestamps();
     }
 
@@ -123,6 +123,51 @@ class User extends Authenticatable
             ->where('course_id', $course->id)
             ->whereIn('status', [\App\Enums\EnrollmentStatus::ACTIVE->value, \App\Enums\EnrollmentStatus::COMPLETED->value])
             ->exists();
+    }
+
+    /**
+     * Check if the user currently has active learning access to a specific course.
+     * Evaluates status and validity dates through Enrollment::hasActiveAccess().
+     */
+    public function hasActiveAccessTo(Course $course): bool
+    {
+        $enrollment = $this->relationLoaded('enrollments')
+            ? $this->enrollments->firstWhere('course_id', $course->id)
+            : $this->enrollments()->where('course_id', $course->id)->first();
+
+        if (! $enrollment) {
+            return false;
+        }
+
+        return $enrollment->hasActiveAccess();
+    }
+
+    /**
+     * Determine course purchase eligibility type (initial purchase, renewal, or not eligible).
+     */
+    public function getCoursePurchaseType(Course $course): \App\Enums\CoursePurchaseType
+    {
+        $enrollment = $this->relationLoaded('enrollments')
+            ? $this->enrollments->firstWhere('course_id', $course->id)
+            : $this->enrollments()->where('course_id', $course->id)->first();
+
+        if (! $enrollment) {
+            return \App\Enums\CoursePurchaseType::INITIAL_PURCHASE;
+        }
+
+        if ($enrollment->status === \App\Enums\EnrollmentStatus::CANCELLED) {
+            return \App\Enums\CoursePurchaseType::NOT_ELIGIBLE;
+        }
+
+        return \App\Enums\CoursePurchaseType::RENEWAL;
+    }
+
+    /**
+     * Check if the user is eligible to purchase or renew this course.
+     */
+    public function canPurchaseCourse(Course $course): bool
+    {
+        return $this->getCoursePurchaseType($course) !== \App\Enums\CoursePurchaseType::NOT_ELIGIBLE;
     }
 
     /**

@@ -81,6 +81,21 @@ class PaymentController extends Controller
                 ]
             );
 
+            if ($order->isRenewal()) {
+                app(\App\Services\ConversionTrackingService::class)->track(
+                    \App\Enums\ConversionEventName::RENEWAL_PAYMENT_FAILED,
+                    [
+                        'course_id' => $order->course_id,
+                        'user_id' => $user->id,
+                        'metadata' => [
+                            'order_id' => $order->id,
+                            'amount' => $order->amount,
+                            'reason' => 'Cryptographic signature verification failed',
+                        ],
+                    ]
+                );
+            }
+
             return redirect()
                 ->route('payment.failed', $order)
                 ->with('error', 'Payment verification could not be validated. Please try again or contact support.');
@@ -128,68 +143,8 @@ class PaymentController extends Controller
             // Auto-convert matching CRM leads
             app(\App\Services\LeadService::class)->autoConvertMatchingLeads($user, 'course purchase');
 
-            // Create or activate enrollment(s)
-            if ($lockedOrder->isBundleOrder() && $lockedOrder->bundle) {
-                $bundleCourses = $lockedOrder->bundle->publishedCourses;
-                foreach ($bundleCourses as $bCourse) {
-                    $enrollment = Enrollment::query()
-                        ->where('user_id', $user->id)
-                        ->where('course_id', $bCourse->id)
-                        ->first();
-
-                    if (! $enrollment) {
-                        Enrollment::create([
-                            'user_id' => $user->id,
-                            'course_id' => $bCourse->id,
-                            'status' => EnrollmentStatus::ACTIVE,
-                            'enrolled_at' => now(),
-                        ]);
-                        app(\App\Services\EngagementService::class)->handleEnrollment($user, $bCourse, true);
-                    } elseif (! $enrollment->isActive() && ! $enrollment->isCompleted()) {
-                        $enrollment->update([
-                            'status' => EnrollmentStatus::ACTIVE,
-                            'enrolled_at' => now(),
-                        ]);
-                    }
-                }
-
-                app(\App\Services\MarketingAutomationService::class)->dispatchTrigger(
-                    \App\Enums\AutomationTrigger::BUNDLE_PURCHASED,
-                    $user,
-                    ['bundle_id' => $lockedOrder->bundle_id],
-                    'order_bundle_' . $lockedOrder->id
-                );
-            } elseif ($lockedOrder->course_id) {
-                $enrollment = Enrollment::query()
-                    ->where('user_id', $user->id)
-                    ->where('course_id', $lockedOrder->course_id)
-                    ->first();
-
-                if (! $enrollment) {
-                    Enrollment::create([
-                        'user_id' => $user->id,
-                        'course_id' => $lockedOrder->course_id,
-                        'status' => EnrollmentStatus::ACTIVE,
-                        'enrolled_at' => now(),
-                    ]);
-                } elseif (! $enrollment->isActive() && ! $enrollment->isCompleted()) {
-                    $enrollment->update([
-                        'status' => EnrollmentStatus::ACTIVE,
-                        'enrolled_at' => now(),
-                    ]);
-                }
-
-                if ($lockedOrder->course) {
-                    app(\App\Services\EngagementService::class)->handleEnrollment($user, $lockedOrder->course, true);
-                }
-
-                app(\App\Services\MarketingAutomationService::class)->dispatchTrigger(
-                    \App\Enums\AutomationTrigger::COURSE_ENROLLED,
-                    $user,
-                    ['course_id' => $lockedOrder->course_id],
-                    'order_course_' . $lockedOrder->id
-                );
-            }
+            // Authoritative Order Fulfillment
+            app(\App\Services\OrderFulfillmentService::class)->fulfillOrder($lockedOrder);
 
             $user->notify(new \App\Notifications\PaymentSuccessNotification($lockedOrder));
             app(\App\Services\TransactionalMailService::class)->sendOrderConfirmation($lockedOrder);
@@ -229,6 +184,21 @@ class PaymentController extends Controller
                         'metadata' => [
                             'order_id' => $lockedOrder->id,
                             'amount' => $lockedOrder->amount,
+                        ],
+                    ]
+                );
+            }
+
+            if ($lockedOrder->isRenewal()) {
+                app(\App\Services\ConversionTrackingService::class)->track(
+                    \App\Enums\ConversionEventName::RENEWAL_PAYMENT_SUCCESS,
+                    [
+                        'course_id' => $lockedOrder->course_id,
+                        'user_id' => $user->id,
+                        'metadata' => [
+                            'order_id' => $lockedOrder->id,
+                            'amount' => $lockedOrder->amount,
+                            'currency' => $lockedOrder->currency,
                         ],
                     ]
                 );

@@ -28,4 +28,16 @@ Schedule::command('app:backup --type=files --prune')
     ->name('weekly-files-backup')
     ->withoutOverlapping();
 
+Schedule::command('enrollments:check-expiry')
+    ->daily()
+    ->name('check-enrollment-expiry')
+    ->withoutOverlapping();
+
+Schedule::command('enrollments:send-expiry-notifications')
+    ->dailyAt('08:00')
+    ->name('send-course-expiry-notifications')
+    ->withoutOverlapping();
+
+
+
 

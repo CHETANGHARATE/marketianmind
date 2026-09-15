@@ -150,57 +150,8 @@ class RazorpayWebhookController extends Controller
                 app(\App\Services\LeadService::class)->autoConvertMatchingLeads($orderUser, 'webhook payment');
             }
 
-            if ($lockedOrder->isBundleOrder() && $lockedOrder->bundle) {
-                $bundleCourses = $lockedOrder->bundle->publishedCourses;
-                foreach ($bundleCourses as $bCourse) {
-                    $enrollment = Enrollment::query()
-                        ->where('user_id', $lockedOrder->user_id)
-                        ->where('course_id', $bCourse->id)
-                        ->first();
-
-                    if (! $enrollment) {
-                        Enrollment::create([
-                            'user_id' => $lockedOrder->user_id,
-                            'course_id' => $bCourse->id,
-                            'status' => EnrollmentStatus::ACTIVE,
-                            'enrolled_at' => now(),
-                        ]);
-                        $user = \App\Models\User::find($lockedOrder->user_id);
-                        if ($user) {
-                            app(\App\Services\EngagementService::class)->handleEnrollment($user, $bCourse, true);
-                        }
-                    } elseif (! $enrollment->isActive() && ! $enrollment->isCompleted()) {
-                        $enrollment->update([
-                            'status' => EnrollmentStatus::ACTIVE,
-                            'enrolled_at' => now(),
-                        ]);
-                    }
-                }
-            } elseif ($lockedOrder->course_id) {
-                $enrollment = Enrollment::query()
-                    ->where('user_id', $lockedOrder->user_id)
-                    ->where('course_id', $lockedOrder->course_id)
-                    ->first();
-
-                if (! $enrollment) {
-                    Enrollment::create([
-                        'user_id' => $lockedOrder->user_id,
-                        'course_id' => $lockedOrder->course_id,
-                        'status' => EnrollmentStatus::ACTIVE,
-                        'enrolled_at' => now(),
-                    ]);
-                } elseif (! $enrollment->isActive() && ! $enrollment->isCompleted()) {
-                    $enrollment->update([
-                        'status' => EnrollmentStatus::ACTIVE,
-                        'enrolled_at' => now(),
-                    ]);
-                }
-
-                $user = \App\Models\User::find($lockedOrder->user_id);
-                if ($user && $lockedOrder->course) {
-                    app(\App\Services\EngagementService::class)->handleEnrollment($user, $lockedOrder->course, true);
-                }
-            }
+            // Authoritative Order Fulfillment
+            app(\App\Services\OrderFulfillmentService::class)->fulfillOrder($lockedOrder);
 
             $user = \App\Models\User::find($lockedOrder->user_id);
             if ($user) {
@@ -245,6 +196,21 @@ class RazorpayWebhookController extends Controller
                             'order_id' => $lockedOrder->id,
                             'amount' => $lockedOrder->amount,
                             'source' => 'razorpay_webhook',
+                        ],
+                    ]
+                );
+            }
+
+            if ($lockedOrder->isRenewal()) {
+                app(\App\Services\ConversionTrackingService::class)->track(
+                    \App\Enums\ConversionEventName::RENEWAL_PAYMENT_SUCCESS,
+                    [
+                        'course_id' => $lockedOrder->course_id,
+                        'user_id' => $lockedOrder->user_id,
+                        'metadata' => [
+                            'order_id' => $lockedOrder->id,
+                            'amount' => $lockedOrder->amount,
+                            'source' => 'razorpay_webhook_order_paid',
                         ],
                     ]
                 );
@@ -299,43 +265,8 @@ class RazorpayWebhookController extends Controller
                 }
             }
 
-            if ($lockedOrder->isBundleOrder() && $lockedOrder->bundle) {
-                $bundleCourses = $lockedOrder->bundle->publishedCourses;
-                foreach ($bundleCourses as $bCourse) {
-                    $enrollment = Enrollment::query()
-                        ->where('user_id', $lockedOrder->user_id)
-                        ->where('course_id', $bCourse->id)
-                        ->first();
-
-                    if (! $enrollment) {
-                        Enrollment::create([
-                            'user_id' => $lockedOrder->user_id,
-                            'course_id' => $bCourse->id,
-                            'status' => EnrollmentStatus::ACTIVE,
-                            'enrolled_at' => now(),
-                        ]);
-                    } elseif (! $enrollment->isActive() && ! $enrollment->isCompleted()) {
-                        $enrollment->update([
-                            'status' => EnrollmentStatus::ACTIVE,
-                            'enrolled_at' => now(),
-                        ]);
-                    }
-                }
-            } elseif ($lockedOrder->course_id) {
-                $enrollment = Enrollment::query()
-                    ->where('user_id', $lockedOrder->user_id)
-                    ->where('course_id', $lockedOrder->course_id)
-                    ->first();
-
-                if (! $enrollment) {
-                    Enrollment::create([
-                        'user_id' => $lockedOrder->user_id,
-                        'course_id' => $lockedOrder->course_id,
-                        'status' => EnrollmentStatus::ACTIVE,
-                        'enrolled_at' => now(),
-                    ]);
-                }
-            }
+            // Authoritative Order Fulfillment
+            app(\App\Services\OrderFulfillmentService::class)->fulfillOrder($lockedOrder);
         });
     }
 
@@ -386,5 +317,20 @@ class RazorpayWebhookController extends Controller
                 ],
             ]
         );
+
+        if ($order->isRenewal()) {
+            app(\App\Services\ConversionTrackingService::class)->track(
+                \App\Enums\ConversionEventName::RENEWAL_PAYMENT_FAILED,
+                [
+                    'course_id' => $order->course_id,
+                    'user_id' => $order->user_id,
+                    'metadata' => [
+                        'order_id' => $order->id,
+                        'amount' => $order->amount,
+                        'source' => 'razorpay_webhook_payment_failed',
+                    ],
+                ]
+            );
+        }
     }
 }

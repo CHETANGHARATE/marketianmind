@@ -44,17 +44,40 @@ class EnrollmentController extends Controller
                 ->with('status', 'You have already completed this course.');
         }
 
+        $validityDays = $course->getAccessValidityDays();
+        $now = now();
+        $startsAt = $now;
+        $expiresAt = $startsAt->copy()->addDays($validityDays);
+
         if ($existingEnrollment) {
             $existingEnrollment->update([
                 'status' => EnrollmentStatus::ACTIVE,
-                'enrolled_at' => now(),
+                'starts_at' => $startsAt,
+                'expires_at' => $expiresAt,
+                'enrolled_at' => $now,
+            ]);
+
+            \App\Models\CourseAccessPeriod::create([
+                'enrollment_id' => $existingEnrollment->id,
+                'period_type' => 'renewal',
+                'starts_at' => $startsAt,
+                'expires_at' => $expiresAt,
             ]);
         } else {
-            Enrollment::create([
+            $enrollment = Enrollment::create([
                 'user_id' => $user->id,
                 'course_id' => $course->id,
                 'status' => EnrollmentStatus::ACTIVE,
-                'enrolled_at' => now(),
+                'starts_at' => $startsAt,
+                'expires_at' => $expiresAt,
+                'enrolled_at' => $now,
+            ]);
+
+            \App\Models\CourseAccessPeriod::create([
+                'enrollment_id' => $enrollment->id,
+                'period_type' => 'initial',
+                'starts_at' => $startsAt,
+                'expires_at' => $expiresAt,
             ]);
         }
 

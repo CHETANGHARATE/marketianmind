@@ -196,11 +196,24 @@
                                     </div>
                                 @endif
 
-                                <p class="mt-2 text-xs text-slate-500 leading-relaxed">
+                                @if(!$course->is_free)
+                                    <div class="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-2.5 border border-slate-200/80 text-center">
+                                        <div>
+                                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Course Access</span>
+                                            <span class="text-xs font-extrabold text-slate-800">{{ $course->accessDurationShort() }}</span>
+                                        </div>
+                                        <div class="border-l border-slate-200">
+                                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Payment</span>
+                                            <span class="text-xs font-extrabold text-slate-800">One-time payment</span>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <p class="mt-2.5 text-xs text-slate-500 leading-relaxed text-center">
                                     @if($course->is_free)
-                                        100% free lifetime access for business owners &amp; founders.
+                                        100% free access for business owners &amp; founders.
                                     @else
-                                        One-time enrollment &bull; Lifetime access &bull; All future updates included
+                                        {{ $course->accessDurationLabel() }} ({{ $course->access_validity_days ?? 365 }}-day course access) &bull; One-time payment &bull; Manual renewal &bull; Progress permanently preserved
                                     @endif
                                 </p>
                             </div>
@@ -213,7 +226,7 @@
                                         <span class="font-bold text-indigo-600">{{ $progress['percentage'] }}%</span>
                                     </div>
                                     <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                                        <div class="h-full bg-indigo-600 rounded-full transition-all duration-300" style="width: {{ $progress['percentage'] }}%"></div>
+                                        <div class="h-full {{ ($enrollment && $enrollment->isAccessExpired()) ? 'bg-slate-400' : 'bg-indigo-600' }} rounded-full transition-all duration-300" style="width: {{ $progress['percentage'] }}%"></div>
                                     </div>
                                     <div class="mt-2 flex items-center justify-between text-[11px] text-slate-500">
                                         <span>{{ $progress['completed'] }} of {{ $progress['total'] }} lessons completed</span>
@@ -224,12 +237,76 @@
                                             </span>
                                         @endif
                                     </div>
+                                    @if($enrollment && $enrollment->isAccessExpired())
+                                        <p class="text-[10px] text-slate-500 mt-2 border-t border-slate-200 pt-1.5">
+                                            ✓ Your learning progress and certificate records remain permanently preserved.
+                                        </p>
+                                    @endif
                                 </div>
                             @endif
 
                             <!-- Primary Dynamic CTA -->
                             <div class="mt-6">
-                                @if($isCompleted)
+                                @if($isEnrolled && $enrollment && $enrollment->isAccessExpired())
+                                    <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-left">
+                                        <div class="flex items-start gap-2.5">
+                                            <span class="mt-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white shrink-0">!</span>
+                                            <div class="text-xs">
+                                                <p class="font-bold text-rose-900">Course Access Expired</p>
+                                                <p class="text-rose-700 mt-0.5 leading-relaxed">
+                                                    Your course access expired{{ $enrollment->getFormattedExpiryDate() ? ' on ' . $enrollment->getFormattedExpiryDate() : '' }}. Renew manually to regain full curriculum and video access.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @if($isCompleted && isset($certificate) && $certificate)
+                                        <a href="{{ route('student.certificates.show', $certificate) }}" class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-bold text-white shadow-xs hover:bg-emerald-500 transition text-center mb-2.5">
+                                            View Certificate &rarr;
+                                        </a>
+                                    @endif
+
+                                    <form action="{{ route('student.courses.purchase', $course) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-rose-600 px-5 py-3.5 text-sm font-bold text-white shadow-xs hover:bg-rose-500 transition cursor-pointer text-center">
+                                            Renew Course Access &rarr;
+                                        </button>
+                                    </form>
+                                @elseif($isEnrolled && $enrollment && $enrollment->isExpiringSoon())
+                                    <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-left">
+                                        <div class="flex items-start gap-2.5">
+                                            <span class="mt-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shrink-0">!</span>
+                                            <div class="text-xs">
+                                                <p class="font-bold text-amber-900">Access Expiring Soon</p>
+                                                <p class="text-amber-700 mt-0.5 leading-relaxed">
+                                                    {{ $enrollment->getRemainingDaysText() }}{{ $enrollment->getFormattedExpiryDate() ? ' (Expires ' . $enrollment->getFormattedExpiryDate() . ')' : '' }}. Renew early to extend your validity.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @if($isCompleted)
+                                        @if(isset($certificate) && $certificate)
+                                            <a href="{{ route('student.certificates.show', $certificate) }}" class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-xs hover:bg-emerald-500 transition text-center mb-2.5">
+                                                View Certificate &rarr;
+                                            </a>
+                                        @endif
+                                        <a href="{{ route('student.courses.show', $course) }}" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-xs hover:bg-indigo-500 transition text-center mb-2.5">
+                                            Review Course &rarr;
+                                        </a>
+                                    @else
+                                        <a href="{{ route('student.courses.show', $course) }}" class="inline-flex w-full items-center justify-center rounded-xl bg-sky-600 px-5 py-3.5 text-sm font-bold text-white shadow-xs hover:bg-sky-500 transition text-center mb-2.5">
+                                            Continue Learning &rarr;
+                                        </a>
+                                    @endif
+
+                                    <form action="{{ route('student.courses.purchase', $course) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-amber-600 px-5 py-3 text-sm font-bold text-white shadow-xs hover:bg-amber-500 transition cursor-pointer text-center">
+                                            Renew Early &rarr;
+                                        </button>
+                                    </form>
+                                @elseif($isCompleted)
                                     @if(isset($certificate) && $certificate)
                                         <a href="{{ route('student.certificates.show', $certificate) }}" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-xs hover:bg-indigo-500 transition text-center mb-2.5">
                                             View Certificate &rarr;
@@ -269,8 +346,12 @@
                                         @if(auth()->user()->isStudent())
                                             <form action="{{ route('student.courses.purchase', $course) }}" method="POST">
                                                 @csrf
+                                                @php
+                                                    $isRenewalUser = auth()->user()->getCoursePurchaseType($course) === \App\Enums\CoursePurchaseType::RENEWAL;
+                                                    $buttonText = $isRenewalUser ? 'Renew Course Access →' : ($ctaVariant?->getConfigValue('button_text') ?? 'Buy Now →');
+                                                @endphp
                                                 <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-xs hover:bg-indigo-500 transition cursor-pointer text-center">
-                                                    {{ $ctaVariant?->getConfigValue('button_text') ?? 'Buy Now →' }}
+                                                    {{ $buttonText }}
                                                 </button>
                                             </form>
                                         @else
@@ -289,6 +370,11 @@
                                     @if($ctaVariant && $ctaVariant->getConfigValue('supporting_message'))
                                         <p class="mt-2 text-center text-xs font-semibold text-amber-600">
                                             {{ $ctaVariant->getConfigValue('supporting_message') }}
+                                        </p>
+                                    @endif
+                                    @if(!$course->is_free)
+                                        <p class="mt-3 text-center text-[11px] text-slate-500 leading-normal">
+                                            One-time payment &bull; {{ $course->accessDurationLabel() }}. After your validity ends, renew manually to retain access. Learning progress and certificates are permanently saved.
                                         </p>
                                     @endif
                                 @endif
@@ -856,8 +942,8 @@
                             </svg>
                         </div>
                         <div>
-                            <h4 class="text-sm font-bold text-white">Lifetime Access &amp; Updates</h4>
-                            <p class="text-xs text-indigo-200 mt-0.5">Continuous curriculum enhancements.</p>
+                            <h4 class="text-sm font-bold text-white">{{ $course->access_validity_days ?? 365 }}-Day Access &amp; Updates</h4>
+                            <p class="text-xs text-indigo-200 mt-0.5">Full access with manual renewal and permanent progress.</p>
                         </div>
                     </div>
 
@@ -909,7 +995,11 @@
                             </span>
                         </summary>
                         <p class="mt-2.5 text-xs text-slate-600 leading-relaxed">
-                            You get lifetime access! Once enrolled, you can revisit any video lesson, review downloadable materials, and access future curriculum updates anytime at your convenience.
+                            @if($course->is_free)
+                                You get 100% free access! Once enrolled, you can revisit any video lesson, review downloadable materials, and access future curriculum updates anytime at your convenience.
+                            @else
+                                Each enrollment grants {{ $course->accessDurationLabel() }} of full curriculum access ({{ $course->getAccessValidityDays() }} days from purchase). It is a one-time payment with no recurring subscriptions or automatic charges. You can renew manually at any time to extend or reactivate access, and your completed lessons, learning progress, and certificates remain permanently preserved in your account.
+                            @endif
                         </p>
                     </details>
 

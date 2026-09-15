@@ -444,6 +444,8 @@
                                             <span class="text-slate-300">&bull;</span>
                                             <span class="text-slate-500">{{ $course->estimated_duration }}</span>
                                         @endif
+                                        <span class="text-slate-300">&bull;</span>
+                                        <span class="font-medium text-slate-600">{{ $course->accessDurationLabel() }}</span>
                                     </div>
 
                                     <!-- Rating Star if available -->

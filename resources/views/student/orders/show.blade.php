@@ -30,7 +30,7 @@
                         </div>
                         <div>
                             <h3 class="text-sm font-bold text-emerald-900">Payment Verified &amp; Course Access Active</h3>
-                            <p class="mt-0.5 text-xs text-emerald-700">Your tuition is paid in full. You have lifetime access to all course lessons and curriculum materials.</p>
+                            <p class="mt-0.5 text-xs text-emerald-700">Your tuition is paid in full. You have active access to all course lessons and curriculum materials for your enrolled period.</p>
                         </div>
                     </div>
                     @if($order->isBundleOrder())
@@ -203,7 +203,7 @@
                         <td class="py-4">
                             <span class="font-bold text-slate-900 text-sm block">{{ $order->productTitle() }}</span>
                             @if($order->isBundleOrder() && $order->bundle)
-                                <span class="text-slate-500 text-xs">All-in-one package with lifetime access to all {{ $order->bundle->courses->count() }} courses included.</span>
+                                <span class="text-slate-500 text-xs">All-in-one package with full access to all {{ $order->bundle->courses->count() }} courses included.</span>
                             @else
                                 <span class="text-slate-500 text-xs">Full course tuition, self-paced curriculum, complete digital marketing modules &amp; certificate eligibility.</span>
                             @endif

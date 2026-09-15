@@ -25,7 +25,7 @@
         @endif
         <div class="info-row">
             <span class="info-label">Access Type</span>
-            <span class="info-value">Lifetime Self-Paced</span>
+            <span class="info-value">{{ $course->accessDurationLabel() }} (Self-Paced)</span>
         </div>
     </div>
 

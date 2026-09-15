@@ -117,6 +117,43 @@
         </div>
     </div>
 
+    <!-- Course Access & Renewal Lifecycle Overview -->
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-3 mb-4">
+            <div>
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <svg class="h-4 w-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Access Validity &amp; Renewal Performance
+                </h3>
+                <p class="text-xs text-slate-400">Validity: {{ $course->getAccessValidityDays() }} days per access period</p>
+            </div>
+            <a href="{{ route('admin.reports.renewals') }}" class="text-xs font-semibold text-amber-400 hover:text-amber-300 transition">
+                View Detailed Renewal Reports &rarr;
+            </a>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+            <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase">Finite Access Students</span>
+                <p class="text-xl font-extrabold text-white mt-1">{{ $stats['finite_enrollments'] ?? 0 }}</p>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase">Course Renewals</span>
+                <p class="text-xl font-extrabold text-emerald-400 mt-1">{{ $stats['renewals_count'] ?? 0 }}</p>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase">Renewal Rate</span>
+                <p class="text-xl font-extrabold text-amber-400 mt-1">{{ $stats['renewal_rate'] ?? 0 }}%</p>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase">Renewal Revenue</span>
+                <p class="text-xl font-extrabold text-emerald-400 mt-1">{{ $stats['formatted_renewal_revenue'] ?? '₹0.00' }}</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Progress Distribution & Learner Funnel -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Progress Distribution Card -->

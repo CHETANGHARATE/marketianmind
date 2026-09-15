@@ -32,8 +32,9 @@
                     :description="$course['description']"
                     :modules="$course['modules']"
                     :duration="$course['duration']"
+                    :badge="$course['badge_details']['label'] ?? 'Practical Marketing'"
                     :actionUrl="$course['actionUrl']"
-                    actionLabel="Continue Learning"
+                    :actionLabel="$course['actionLabel'] ?? 'Continue Learning'"
                 />
             @endforeach
         </div>

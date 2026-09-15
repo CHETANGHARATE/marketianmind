@@ -25,18 +25,39 @@ class CourseController extends Controller
             ->get()
             ->keyBy('course_id');
 
-        $enrolledCourses = $user->enrolledCourses()
+        $enrollmentsByCourseId = $user->enrollments()
+            ->get()
+            ->keyBy('course_id');
+
+        $allEnrolledCourses = $user->enrolledCourses()
             ->published()
             ->with(['category'])
             ->withCount(['modules'])
             ->get()
-            ->map(function (Course $course) use ($user, $certificatesByCourseId) {
+            ->map(function (Course $course) use ($user, $certificatesByCourseId, $enrollmentsByCourseId) {
                 $progress = $course->progressFor($user);
                 $nextLesson = $course->nextLessonFor($user);
                 $certificate = $certificatesByCourseId->get($course->id);
+                $enrollment = $enrollmentsByCourseId->get($course->id);
+
+                $accessState = $enrollment ? $enrollment->getAccessState() : 'active';
+                $remainingDaysText = $enrollment ? $enrollment->getRemainingDaysText() : null;
+                $formattedExpiry = $enrollment ? $enrollment->getFormattedExpiryDate('d M Y') : null;
+                $canRenew = $enrollment ? $enrollment->canRenew() : false;
+                $renewalLabel = $enrollment ? $enrollment->getRenewalCtaLabel() : 'Renew Access';
+                $badgeDetails = $enrollment ? $enrollment->getAccessBadgeDetails() : ['label' => 'Access Active', 'color' => 'emerald', 'state' => 'active'];
+
+                $isCompleted = $progress['is_completed'];
+
+                $actionUrl = $nextLesson
+                    ? route('student.courses.lessons.show', [$course, $nextLesson])
+                    : route('student.courses.show', $course);
+
+                $actionLabel = $isCompleted ? 'Review Course' : 'Continue Learning';
 
                 return [
                     'model' => $course,
+                    'course' => $course,
                     'title' => $course->title,
                     'slug' => $course->slug,
                     'description' => $course->short_description ?? $course->description,
@@ -45,19 +66,45 @@ class CourseController extends Controller
                     'modules' => $course->modules_count,
                     'duration' => $course->estimated_duration ?? 'Self-paced',
                     'progress' => $progress,
-                    'is_completed' => $progress['is_completed'],
+                    'is_completed' => $isCompleted,
                     'certificate' => $certificate,
                     'next_lesson' => $nextLesson,
-                    'actionUrl' => $nextLesson
-                        ? route('student.courses.lessons.show', [$course, $nextLesson])
-                        : route('student.courses.show', $course),
-                    'actionLabel' => $progress['is_completed'] ? 'Review Course' : 'Continue Learning',
+                    'actionUrl' => $actionUrl,
+                    'actionLabel' => $actionLabel,
+                    'enrollment' => $enrollment,
+                    'access_state' => $accessState,
+                    'remaining_days_text' => $remainingDaysText,
+                    'formatted_expiry' => $formattedExpiry,
+                    'can_renew' => $canRenew,
+                    'renewal_label' => $renewalLabel,
+                    'badge_details' => $badgeDetails,
                 ];
             });
 
+        // Compute tab counts across all enrolled courses
+        $filterCounts = [
+            'all' => $allEnrolledCourses->count(),
+            'active' => $allEnrolledCourses->filter(fn ($c) => in_array($c['access_state'], ['active', 'lifetime'], true))->count(),
+            'expiring' => $allEnrolledCourses->filter(fn ($c) => $c['access_state'] === 'expiring')->count(),
+            'expired' => $allEnrolledCourses->filter(fn ($c) => $c['access_state'] === 'expired')->count(),
+            'completed' => $allEnrolledCourses->filter(fn ($c) => $c['is_completed'])->count(),
+        ];
+
+        $currentFilter = $request->query('status', 'all');
+
+        $filteredCourses = match ($currentFilter) {
+            'active' => $allEnrolledCourses->filter(fn ($c) => in_array($c['access_state'], ['active', 'lifetime'], true)),
+            'expiring' => $allEnrolledCourses->filter(fn ($c) => $c['access_state'] === 'expiring'),
+            'expired' => $allEnrolledCourses->filter(fn ($c) => $c['access_state'] === 'expired'),
+            'completed' => $allEnrolledCourses->filter(fn ($c) => $c['is_completed']),
+            default => $allEnrolledCourses,
+        };
+
         return view('student.courses', [
             'user' => $user,
-            'enrolledCourses' => $enrolledCourses,
+            'enrolledCourses' => $filteredCourses->values(),
+            'filterCounts' => $filterCounts,
+            'currentFilter' => $currentFilter,
             'headerTitle' => 'My Courses',
         ]);
     }
@@ -73,8 +120,8 @@ class CourseController extends Controller
             abort(404, 'Course not found or unavailable.');
         }
 
-        if (! $user->isEnrolledIn($course)) {
-            abort(403, 'You are not enrolled in this course.');
+        if (! $user->hasActiveAccessTo($course)) {
+            abort(403, 'You do not have active enrollment access to this course.');
         }
 
         $nextLesson = $course->nextLessonFor($user);

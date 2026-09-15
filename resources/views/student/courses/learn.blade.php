@@ -84,6 +84,11 @@
             </div>
         @endif
 
+        <!-- Expiring Soon Access Banner -->
+        @if(isset($enrollment) && $enrollment->isExpiringSoon())
+            <x-student.access-banner :enrollment="$enrollment" :course="$course" />
+        @endif
+
         <!-- Course Completion State Banner -->
         @if($progress['is_completed'])
             <div class="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 p-5 sm:p-6 shadow-2xs">

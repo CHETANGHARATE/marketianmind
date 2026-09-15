@@ -22,13 +22,25 @@ class LearningController extends Controller
     {
         $user = $request->user();
 
+        $enrollmentsByCourseId = $user->enrollments()
+            ->get()
+            ->keyBy('course_id');
+
         $enrolledCourses = $user->enrolledCourses()
             ->published()
             ->with(['category'])
             ->withCount('modules')
             ->get()
-            ->map(function (Course $course) use ($user) {
+            ->map(function (Course $course) use ($user, $enrollmentsByCourseId) {
                 $progress = $course->progressFor($user);
+                $enrollment = $enrollmentsByCourseId->get($course->id);
+
+                $accessState = $enrollment ? $enrollment->getAccessState() : 'active';
+                $remainingDaysText = $enrollment ? $enrollment->getRemainingDaysText() : null;
+                $formattedExpiry = $enrollment ? $enrollment->getFormattedExpiryDate('d M Y') : null;
+                $canRenew = $enrollment ? $enrollment->canRenew() : false;
+                $renewalLabel = $enrollment ? $enrollment->getRenewalCtaLabel() : 'Renew Access';
+                $badgeDetails = $enrollment ? $enrollment->getAccessBadgeDetails() : ['label' => 'Access Active', 'color' => 'emerald', 'state' => 'active'];
 
                 return [
                     'model' => $course,
@@ -36,8 +48,16 @@ class LearningController extends Controller
                     'description' => $course->short_description ?? $course->description,
                     'modules' => $course->modules_count,
                     'duration' => $course->estimated_duration ?? 'Self-paced',
-                    'actionUrl' => route('student.courses.show', $course),
+                    'actionUrl' => $accessState === 'expired' ? route('student.courses') : route('student.courses.show', $course),
+                    'actionLabel' => $accessState === 'expired' ? 'Renew Access' : ($progress['percentage'] > 0 ? 'Continue Learning' : 'Start Course'),
                     'progress' => $progress,
+                    'enrollment' => $enrollment,
+                    'access_state' => $accessState,
+                    'remaining_days_text' => $remainingDaysText,
+                    'formatted_expiry' => $formattedExpiry,
+                    'can_renew' => $canRenew,
+                    'renewal_label' => $renewalLabel,
+                    'badge_details' => $badgeDetails,
                 ];
             })
             ->all();

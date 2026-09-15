@@ -3,7 +3,7 @@
 @section('content')
     <h1 class="headline">Thank you for your order!</h1>
     <p class="text">
-        Your order has been confirmed and your lifetime access to the course is now active. Here are your transaction details:
+        Your order has been confirmed and your course access is now active. Here are your transaction details:
     </p>
 
     <div class="info-panel">
@@ -15,6 +15,12 @@
             <span class="info-label">{{ $order->isBundleOrder() ? 'Bundle' : 'Course' }}</span>
             <span class="info-value">{{ $order->productTitle() }}</span>
         </div>
+        @if($order->course)
+            <div class="info-row">
+                <span class="info-label">Access Duration</span>
+                <span class="info-value">{{ $order->course->accessDurationLabel() }}</span>
+            </div>
+        @endif
         <div class="info-row">
             <span class="info-label">Date</span>
             <span class="info-value">{{ $order->created_at->format('M d, Y') }}</span>

@@ -84,7 +84,7 @@
                                 Included Courses Curriculum
                             </h2>
                             <p class="text-xs text-slate-500 mt-0.5">
-                                You receive immediate, lifetime access to all {{ $totalCoursesCount }} programs below:
+                                You receive immediate, full access to all {{ $totalCoursesCount }} programs below:
                             </p>
                         </div>
                         <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full">
@@ -232,7 +232,7 @@
                                         </svg>
                                         <span>You Own All Courses in this Bundle</span>
                                     </div>
-                                    <p class="text-[11px] text-emerald-600 mt-1">Full lifetime access is active on your account.</p>
+                                    <p class="text-[11px] text-emerald-600 mt-1">Full course bundle access is active on your account.</p>
                                 </div>
                                 <a href="{{ route('student.my-learning') }}" class="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-5 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-slate-800 transition">
                                     Go to My Learning &rarr;
@@ -258,7 +258,7 @@
                         @endif
 
                         <div class="text-center text-[11px] text-slate-400">
-                            Instant access &bull; Lifetime updates &bull; 100% Secure Checkout
+                            Instant access &bull; Course updates &bull; 100% Secure Checkout
                         </div>
                     </div>
 

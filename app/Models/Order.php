@@ -101,6 +101,23 @@ class Order extends Model
     }
 
     /**
+     * Check if this order represents a course renewal purchase.
+     */
+    public function isRenewal(): bool
+    {
+        return ($this->metadata['purchase_type'] ?? null) === \App\Enums\CoursePurchaseType::RENEWAL->value
+            || ($this->metadata['purchase_type'] ?? null) === 'renewal';
+    }
+
+    /**
+     * Check if this order represents an initial course purchase.
+     */
+    public function isInitialPurchase(): bool
+    {
+        return ! $this->isRenewal();
+    }
+
+    /**
      * Get the human-readable product title for this order.
      */
     public function productTitle(): string
@@ -126,6 +143,14 @@ class Order extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get all course access periods created by this order.
+     */
+    public function accessPeriods(): HasMany
+    {
+        return $this->hasMany(CourseAccessPeriod::class);
     }
 
     /**
@@ -175,6 +200,14 @@ class Order extends Model
     public function isRefunded(): bool
     {
         return $this->status === OrderStatus::REFUNDED;
+    }
+
+    /**
+     * Check if this order has completed course access fulfillment.
+     */
+    public function isFulfilled(): bool
+    {
+        return isset($this->metadata['fulfilled_at']) || $this->accessPeriods()->exists();
     }
 
     /**

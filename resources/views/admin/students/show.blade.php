@@ -119,10 +119,11 @@
                     <thead>
                         <tr class="border-b border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                             <th class="py-3 pr-4">Course</th>
+                            <th class="py-3 px-4">Access Lifecycle</th>
                             <th class="py-3 px-4">Enrolled At</th>
-                            <th class="py-3 px-4 w-48">Progress</th>
+                            <th class="py-3 px-4 w-44">Progress</th>
                             <th class="py-3 px-4 text-center">Status</th>
-                            <th class="py-3 pl-4 text-right">Action</th>
+                            <th class="py-3 pl-4 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800/60">
@@ -131,6 +132,7 @@
                                 $prog = $enrollment->course_progress;
                                 $percentage = $prog['percentage'] ?? 0;
                                 $isCompleted = ($enrollment->status?->value ?? $enrollment->status) === 'completed' || ($prog['is_completed'] ?? false);
+                                $adminBadge = $enrollment->getAdminAccessBadgeDetails();
                             @endphp
                             <tr class="hover:bg-slate-800/40 transition">
                                 <td class="py-3.5 pr-4">
@@ -140,6 +142,24 @@
                                     <span class="text-[11px] text-slate-400">
                                         {{ $enrollment->course?->category?->name ?? 'Uncategorized' }}
                                     </span>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <div class="space-y-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider {{ $adminBadge['classes'] }}">
+                                            {{ $adminBadge['label'] }}
+                                        </span>
+                                        <div class="text-[11px]">
+                                            @if($enrollment->isLegacyLifetimeAccess())
+                                                <span class="text-indigo-300">Permanent</span>
+                                            @elseif($enrollment->expires_at)
+                                                <span class="{{ $enrollment->isAccessExpired() ? 'text-rose-400' : 'text-slate-300' }}">
+                                                    {{ $enrollment->expires_at->format('M d, Y') }}
+                                                </span>
+                                            @else
+                                                <span class="text-slate-500">-</span>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </td>
                                 <td class="py-3.5 px-4 text-slate-300">
                                     {{ $enrollment->enrolled_at?->format('M d, Y') ?? $enrollment->created_at?->format('M d, Y') }}
@@ -162,14 +182,12 @@
                                     </span>
                                 </td>
                                 <td class="py-3.5 pl-4 text-right">
-                                    @if($enrollment->course)
-                                        <a href="{{ route('admin.courses.edit', $enrollment->course) }}"
+                                    <div class="flex items-center justify-end gap-3">
+                                        <a href="{{ route('admin.enrollments.show', $enrollment) }}"
                                            class="text-xs font-semibold text-amber-400 hover:text-amber-300 transition">
-                                            Course Details &rarr;
+                                            Manage Access &rarr;
                                         </a>
-                                    @else
-                                        <span class="text-slate-500 text-xs">N/A</span>
-                                    @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

@@ -264,6 +264,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Admin Enrollment Management
     Route::get('/enrollments', [AdminEnrollmentController::class, 'index'])->name('enrollments.index');
     Route::get('/enrollments/{enrollment}', [AdminEnrollmentController::class, 'show'])->name('enrollments.show');
+    Route::post('/enrollments/{enrollment}/extend-access', [AdminEnrollmentController::class, 'extendAccess'])->name('enrollments.extend-access');
 
     // Admin Certificate Management
     Route::get('/certificates', [AdminCertificateController::class, 'index'])->name('certificates.index');
@@ -320,9 +321,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/reports/courses', [AdminReportController::class, 'courses'])->name('reports.courses');
     Route::get('/reports/enrollments', [AdminReportController::class, 'enrollments'])->name('reports.enrollments');
     Route::get('/reports/coupons', [AdminReportController::class, 'coupons'])->name('reports.coupons');
+    Route::get('/reports/renewals', [AdminReportController::class, 'renewals'])->name('reports.renewals');
     Route::get('/reports/export/sales', [AdminReportController::class, 'exportSales'])->name('reports.export.sales');
     Route::get('/reports/export/courses', [AdminReportController::class, 'exportCourses'])->name('reports.export.courses');
     Route::get('/reports/export/enrollments', [AdminReportController::class, 'exportEnrollments'])->name('reports.export.enrollments');
+    Route::get('/reports/export/renewals', [AdminReportController::class, 'exportRenewals'])->name('reports.export.renewals');
 
     // Admin Conversion Optimization & Funnel
     Route::get('/funnel', [AdminFunnelController::class, 'index'])->name('funnel.index');

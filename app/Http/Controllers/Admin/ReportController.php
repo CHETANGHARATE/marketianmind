@@ -150,4 +150,47 @@ class ReportController extends Controller
 
         return $this->reportingService->streamEnrollmentsCsv($dateFilter['start'], $dateFilter['end']);
     }
+
+    /**
+     * Renewal Analytics & Lifecycle Performance Report.
+     */
+    public function renewals(Request $request, \App\Services\RenewalAnalyticsService $renewalService): View
+    {
+        $dateFilter = $this->reportingService->parseDateRange(
+            $request->query('range', '30d'),
+            $request->query('start_date'),
+            $request->query('end_date')
+        );
+
+        $summary = $renewalService->getRenewalSummary($dateFilter['start'], $dateFilter['end']);
+        $courseMetrics = $renewalService->getCourseRenewalMetrics($dateFilter['start'], $dateFilter['end']);
+        $cohorts = $renewalService->getExpiryCohortReport(6);
+        $latency = $renewalService->getRenewalLatencyMetrics($dateFilter['start'], $dateFilter['end']);
+        $funnel = $renewalService->getRenewalFunnel($dateFilter['start'], $dateFilter['end']);
+        $recentRenewals = $renewalService->getRecentRenewalActivity(10);
+
+        return view('admin.reports.renewals', compact(
+            'dateFilter',
+            'summary',
+            'courseMetrics',
+            'cohorts',
+            'latency',
+            'funnel',
+            'recentRenewals'
+        ));
+    }
+
+    /**
+     * Stream CSV Export for Renewal Transactions.
+     */
+    public function exportRenewals(Request $request, \App\Services\RenewalAnalyticsService $renewalService): StreamedResponse
+    {
+        $dateFilter = $this->reportingService->parseDateRange(
+            $request->query('range', 'all'),
+            $request->query('start_date'),
+            $request->query('end_date')
+        );
+
+        return $renewalService->streamRenewalsCsv($dateFilter['start'], $dateFilter['end']);
+    }
 }

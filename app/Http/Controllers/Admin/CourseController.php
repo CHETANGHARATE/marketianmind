@@ -107,7 +107,7 @@ class CourseController extends Controller
             auditable: $course,
             description: "Created course: {$course->title}",
             oldValues: null,
-            newValues: $course->only(['title', 'slug', 'course_category_id', 'instructor_id', 'price', 'is_free', 'status', 'featured'])
+            newValues: $course->only(['title', 'slug', 'course_category_id', 'instructor_id', 'price', 'is_free', 'status', 'featured', 'access_validity_days'])
         );
 
         return redirect()
@@ -154,7 +154,7 @@ class CourseController extends Controller
             $validated['thumbnail'] = $request->file('thumbnail')->store('courses/thumbnails', 'public');
         }
 
-        $trackFields = ['title', 'slug', 'course_category_id', 'instructor_id', 'price', 'is_free', 'status', 'featured'];
+        $trackFields = ['title', 'slug', 'course_category_id', 'instructor_id', 'price', 'is_free', 'status', 'featured', 'access_validity_days'];
         $oldValues = $course->only($trackFields);
         $oldStatus = $course->status;
 

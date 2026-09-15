@@ -71,6 +71,10 @@ class LessonController extends Controller
                 ->first();
         }
 
+        $enrollment = $user->enrollments()
+            ->where('course_id', $course->id)
+            ->first();
+
         return view('student.courses.learn', [
             'course' => $course,
             'currentLesson' => $lesson,
@@ -82,6 +86,7 @@ class LessonController extends Controller
             'completedLessonIds' => $completedLessonIds,
             'firstLesson' => $firstLesson,
             'certificate' => $certificate,
+            'enrollment' => $enrollment,
         ]);
     }
 
@@ -229,8 +234,8 @@ class LessonController extends Controller
             abort(404, 'Course not found or unavailable.');
         }
 
-        if (! $user->isEnrolledIn($course)) {
-            abort(403, 'You must be enrolled in this course to access lessons.');
+        if (! $user->hasActiveAccessTo($course)) {
+            abort(403, 'You must have active enrollment access to this course to access lessons.');
         }
 
         if (! $lesson->module || $lesson->module->course_id !== $course->id) {

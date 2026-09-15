@@ -12,18 +12,23 @@
             <span class="text-xs font-bold uppercase tracking-widest text-rose-600">Error 403</span>
             <h1 class="mt-1 text-3xl font-extrabold text-slate-900 tracking-tight">Access Restricted</h1>
             <p class="mt-2 text-sm text-slate-600 leading-relaxed">
-                You do not have the required permissions to access this page or resource.
+                {{ !empty($exception?->getMessage()) ? $exception->getMessage() : 'You do not have active enrollment access or the required permissions to view this resource.' }}
             </p>
         </div>
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <a href="{{ route('home') }}" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition shadow-xs">
-                Back to Home
-            </a>
             @auth
+                @if(auth()->user()->isStudent())
+                    <a href="{{ route('student.courses') }}" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition shadow-xs">
+                        My Courses &amp; Renewals
+                    </a>
+                @endif
                 <a href="{{ auth()->user()->dashboardUrl() }}" class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-sm transition">
                     Go to Dashboard
                 </a>
             @else
+                <a href="{{ route('home') }}" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition shadow-xs">
+                    Back to Home
+                </a>
                 <a href="{{ route('login') }}" class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-sm transition">
                     Log In
                 </a>

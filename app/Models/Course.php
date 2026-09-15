@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
     'status',
     'featured',
     'estimated_duration',
+    'access_validity_days',
 ])]
 class Course extends Model
 {
@@ -45,6 +46,7 @@ class Course extends Model
         'is_free' => false,
         'status' => 'draft',
         'featured' => false,
+        'access_validity_days' => 365,
     ];
 
     /**
@@ -60,6 +62,7 @@ class Course extends Model
             'is_free' => 'boolean',
             'status' => CourseStatus::class,
             'featured' => 'boolean',
+            'access_validity_days' => 'integer',
         ];
     }
 
@@ -333,11 +336,27 @@ class Course extends Model
     }
 
     /**
+     * Get the number of days of access granted by one purchase or renewal.
+     */
+    public function getAccessValidityDays(): int
+    {
+        return (int) ($this->access_validity_days ?? 365);
+    }
+
+    /**
      * Get all enrollments for this course.
      */
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);
+    }
+
+    /**
+     * Get all access periods for this course through enrollments.
+     */
+    public function accessPeriods(): HasManyThrough
+    {
+        return $this->hasManyThrough(CourseAccessPeriod::class, Enrollment::class);
     }
 
     /**
@@ -656,5 +675,126 @@ class Course extends Model
         }
 
         return '₹' . number_format($this->finalPrice(), 2);
+    }
+
+    /**
+     * Check if a given user currently has active learning access to this course.
+     */
+    public function hasActiveAccessFor(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return $user->hasActiveAccessTo($this);
+    }
+
+    /**
+     * Get the purchase type for a given user.
+     */
+    public function getPurchaseTypeFor(?User $user): \App\Enums\CoursePurchaseType
+    {
+        if (! $user) {
+            return \App\Enums\CoursePurchaseType::INITIAL_PURCHASE;
+        }
+
+        return $user->getCoursePurchaseType($this);
+    }
+
+    /**
+     * Check if a given user can purchase this course.
+     */
+    public function canPurchaseFor(?User $user): bool
+    {
+        if (! $user) {
+            return true;
+        }
+
+        return $user->canPurchaseCourse($this);
+    }
+
+
+    /**
+     * Get human-friendly access duration label.
+     * Examples:
+     * - Free course: "Free Access"
+     * - 365 days: "1 Year Access"
+     * - 730 days: "2 Years Access"
+     * - 180 days: "180 Days Access"
+     * - 90 days: "90 Days Access"
+     * - 30 days: "30 Days Access"
+     * - 1 day: "1 Day Access"
+     * - X days: "X Days Access"
+     */
+    public function accessDurationLabel(): string
+    {
+        if ($this->is_free) {
+            return 'Free Access';
+        }
+
+        $days = $this->getAccessValidityDays();
+
+        if ($days === 365) {
+            return '1 Year Access';
+        }
+
+        if ($days === 730) {
+            return '2 Years Access';
+        }
+
+        if ($days > 365 && $days % 365 === 0) {
+            $years = (int) ($days / 365);
+            return "{$years} Years Access";
+        }
+
+        if ($days === 1) {
+            return '1 Day Access';
+        }
+
+        return "{$days} Days Access";
+    }
+
+    /**
+     * Get a short duration descriptor without the word "Access".
+     * E.g. "1 Year", "180 Days", "Free"
+     */
+    public function accessDurationShort(): string
+    {
+        if ($this->is_free) {
+            return 'Free';
+        }
+
+        $days = $this->getAccessValidityDays();
+
+        if ($days === 365) {
+            return '1 Year';
+        }
+
+        if ($days === 730) {
+            return '2 Years';
+        }
+
+        if ($days > 365 && $days % 365 === 0) {
+            $years = (int) ($days / 365);
+            return "{$years} Years";
+        }
+
+        if ($days === 1) {
+            return '1 Day';
+        }
+
+        return "{$days} Days";
+    }
+
+    /**
+     * Get a descriptive sentence summarizing access and payment terms.
+     */
+    public function accessValidityDescription(): string
+    {
+        if ($this->is_free) {
+            return '100% free access for business owners & founders.';
+        }
+
+        return 'Pay once for ' . $this->accessDurationShort() . ' of full access. Manual renewal available with permanent progress preservation.';
     }
 }

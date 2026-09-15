@@ -139,7 +139,7 @@
                     Master practical digital marketing with our certified courses
                 </h3>
                 <p class="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
-                    Gain lifetime access to self-paced video lessons, downloadable templates, and structured assignments designed to generate measurable business ROI.
+                    Gain structured access to self-paced video lessons, downloadable templates, and practical assignments designed to generate measurable business ROI.
                 </p>
             </div>
 

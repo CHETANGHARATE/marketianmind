@@ -249,6 +249,29 @@
                     @enderror
                 </div>
             </div>
+
+            <!-- Course Access Validity -->
+            <div class="pt-2 border-t border-slate-800">
+                <label for="access_validity_days" class="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                    Course Access Validity (Days) <span class="text-amber-400">*</span>
+                </label>
+                <div class="mt-1.5 max-w-xs relative rounded-lg border border-slate-700 bg-slate-950 overflow-hidden focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500">
+                    <input type="number"
+                           name="access_validity_days"
+                           id="access_validity_days"
+                           min="1"
+                           value="{{ old('access_validity_days', 365) }}"
+                           required
+                           placeholder="365"
+                           class="w-full bg-transparent px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-hidden">
+                </div>
+                <p class="mt-1 text-[11px] text-slate-400">
+                    Number of days of access granted for each purchase or renewal. Default: 365 days.
+                </p>
+                @error('access_validity_days')
+                    <p class="mt-1 text-xs text-rose-400">{{ $message }}</p>
+                @enderror
+            </div>
         </div>
 
         <!-- 4. Publishing & Meta Settings -->

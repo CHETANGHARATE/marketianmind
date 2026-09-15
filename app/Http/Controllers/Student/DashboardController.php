@@ -18,13 +18,17 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        // 1. Fetch user certificates keyed by course_id for fast lookup
+        // 1. Fetch user certificates and enrollments keyed by course_id for fast, N+1-free lookup
         $certificatesByCourse = Certificate::query()
             ->where('user_id', $user->id)
             ->get()
             ->keyBy('course_id');
 
         $certificatesCount = $certificatesByCourse->count();
+
+        $enrollmentsByCourse = $user->enrollments()
+            ->get()
+            ->keyBy('course_id');
 
         // 2. Retrieve all published enrolled courses for the student with eager loading
         $enrolledCoursesRaw = $user->enrolledCourses()
@@ -38,6 +42,9 @@ class DashboardController extends Controller
         $completedCourses = [];
         $totalPublishedLessons = 0;
         $totalCompletedLessons = 0;
+        $activeAccessCount = 0;
+        $expiringSoonCount = 0;
+        $expiredAccessCount = 0;
 
         foreach ($enrolledCoursesRaw as $course) {
             $progress = $course->progressFor($user);
@@ -46,6 +53,23 @@ class DashboardController extends Controller
 
             $totalPublishedLessons += $progress['total'];
             $totalCompletedLessons += $progress['completed'];
+
+            $enrollment = $enrollmentsByCourse->get($course->id);
+            $accessState = $enrollment ? $enrollment->getAccessState() : 'active';
+            $remainingDaysText = $enrollment ? $enrollment->getRemainingDaysText() : null;
+            $formattedExpiry = $enrollment ? $enrollment->getFormattedExpiryDate('d M Y') : null;
+            $canRenew = $enrollment ? $enrollment->canRenew() : false;
+            $renewalLabel = $enrollment ? $enrollment->getRenewalCtaLabel() : 'Renew Access';
+            $badgeDetails = $enrollment ? $enrollment->getAccessBadgeDetails() : ['label' => 'Access Active', 'color' => 'emerald', 'state' => 'active'];
+
+            if ($accessState === 'expired') {
+                $expiredAccessCount++;
+            } elseif ($accessState === 'expiring') {
+                $expiringSoonCount++;
+                $activeAccessCount++;
+            } else {
+                $activeAccessCount++;
+            }
 
             $actionUrl = $nextLesson
                 ? route('student.courses.lessons.show', [$course, $nextLesson])
@@ -75,6 +99,13 @@ class DashboardController extends Controller
                 'next_lesson' => $nextLesson,
                 'actionUrl' => $actionUrl,
                 'actionLabel' => $actionLabel,
+                'enrollment' => $enrollment,
+                'access_state' => $accessState,
+                'remaining_days_text' => $remainingDaysText,
+                'formatted_expiry' => $formattedExpiry,
+                'can_renew' => $canRenew,
+                'renewal_label' => $renewalLabel,
+                'badge_details' => $badgeDetails,
             ];
 
             $enrolledCourses[] = $courseData;
@@ -122,6 +153,9 @@ class DashboardController extends Controller
             'overall_progress' => $overallProgress,
             'lessons_completed' => $totalCompletedLessons,
             'total_lessons' => $totalPublishedLessons,
+            'active_access_count' => $activeAccessCount,
+            'expiring_soon_count' => $expiringSoonCount,
+            'expired_access_count' => $expiredAccessCount,
         ];
 
         // 3. Compact Recent Certificates (take 4)

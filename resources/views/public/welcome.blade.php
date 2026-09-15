@@ -313,10 +313,10 @@
                                 </div>
 
                                 <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
-                                    <div class="text-[11px] text-slate-500 flex items-center gap-3">
+                                    <div class="text-[11px] text-slate-500 flex items-center gap-2">
                                         <span>{{ $course->modules_count }} {{ Str::plural('Module', $course->modules_count) }}</span>
                                         <span>&bull;</span>
-                                        <span>{{ $course->lessons_count }} {{ Str::plural('Lesson', $course->lessons_count) }}</span>
+                                        <span>{{ $course->accessDurationLabel() }}</span>
                                     </div>
 
                                     <a href="{{ route('courses.show', $course) }}" class="inline-flex items-center text-xs font-bold text-indigo-600 hover:text-indigo-700 transition">
@@ -501,7 +501,7 @@
                         </svg>
                     </div>
                     <div>
-                        <h4 class="text-sm font-bold text-white">Lifetime Access</h4>
+                        <h4 class="text-sm font-bold text-white">Full-Year Access</h4>
                         <p class="text-xs text-indigo-200 mt-0.5">Learn at your own pace, on any device.</p>
                     </div>
                 </div>

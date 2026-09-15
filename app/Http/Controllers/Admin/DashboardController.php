@@ -67,6 +67,34 @@ class DashboardController extends Controller
         $overdueFollowUps = $hasLeads ? Lead::overdueFollowUps()->count() : 0;
         $leadConversionRate = $totalLeads > 0 ? round(($convertedLeads / $totalLeads) * 100, 1) : 0;
 
+        // Course Access & Renewal Metrics
+        $hasAccessPeriods = Schema::hasTable('course_access_periods');
+        $renewalsThisMonth = $hasAccessPeriods
+            ? \App\Models\CourseAccessPeriod::where('period_type', 'renewal')
+                ->where('created_at', '>=', now()->startOfMonth())
+                ->count()
+            : 0;
+
+        $renewalRevenueThisMonthPaise = $hasOrders
+            ? (int) Order::where('status', OrderStatus::PAID->value)
+                ->where(function ($q) {
+                    $q->where('metadata->purchase_type', 'renewal')
+                      ->orWhereHas('accessPeriods', fn ($p) => $p->where('period_type', 'renewal'));
+                })
+                ->where('created_at', '>=', now()->startOfMonth())
+                ->sum('amount')
+            : 0;
+        $renewalRevenueThisMonth = round($renewalRevenueThisMonthPaise / 100, 2);
+
+        $expiringSoon = $hasEnrollments
+            ? Enrollment::whereIn('status', [EnrollmentStatus::ACTIVE->value, EnrollmentStatus::COMPLETED->value])
+                ->whereNotNull('starts_at')
+                ->whereNotNull('expires_at')
+                ->where('expires_at', '>', now())
+                ->where('expires_at', '<=', now()->addDays(30))
+                ->count()
+            : 0;
+
         $metrics = [
             'total_students' => $totalStudents,
             'new_students_30d' => $newStudents30d,
@@ -91,6 +119,10 @@ class DashboardController extends Controller
             'due_follow_ups' => $dueFollowUps,
             'overdue_follow_ups' => $overdueFollowUps,
             'lead_conversion_rate' => $leadConversionRate,
+            'renewals_this_month' => $renewalsThisMonth,
+            'renewal_revenue_this_month' => $renewalRevenueThisMonth,
+            'formatted_renewal_revenue' => '₹' . number_format($renewalRevenueThisMonth, 2),
+            'expiring_soon' => $expiringSoon,
         ];
 
         // Recent Activity Feeds (limited to latest 5, with eager loading)
