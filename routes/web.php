@@ -31,6 +31,7 @@ use App\Http\Controllers\Admin\OfferController as AdminOfferController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ReferralController as AdminReferralController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\RetentionController as AdminRetentionController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -106,10 +107,10 @@ Route::get('/health', [HealthController::class, 'publicCheck'])->name('health');
 */
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
-    Route::post('/register', [RegisteredUserController::class, 'store']);
+    Route::post('/register', [RegisteredUserController::class, 'store'])->middleware('throttle:10,1');
 
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:5,1');
 });
 
 /*
@@ -265,6 +266,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/enrollments', [AdminEnrollmentController::class, 'index'])->name('enrollments.index');
     Route::get('/enrollments/{enrollment}', [AdminEnrollmentController::class, 'show'])->name('enrollments.show');
     Route::post('/enrollments/{enrollment}/extend-access', [AdminEnrollmentController::class, 'extendAccess'])->name('enrollments.extend-access');
+
+    // Admin Retention & Renewal Optimization Workspace
+    Route::get('/retention', [AdminRetentionController::class, 'index'])->name('retention.index');
+    Route::post('/retention/support/{student}/{course}', [AdminRetentionController::class, 'sendSupport'])->name('retention.support');
+    Route::get('/retention/export', [AdminRetentionController::class, 'export'])->name('retention.export');
 
     // Admin Certificate Management
     Route::get('/certificates', [AdminCertificateController::class, 'index'])->name('certificates.index');

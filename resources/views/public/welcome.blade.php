@@ -267,6 +267,10 @@
                             @if($course->thumbnail)
                                 <img src="{{ Storage::url($course->thumbnail) }}"
                                      alt="{{ $course->title }}"
+                                     loading="lazy"
+                                     decoding="async"
+                                     width="640"
+                                     height="360"
                                      class="h-48 w-full object-cover border-b border-slate-100">
                             @else
                                 <div class="h-44 w-full bg-gradient-to-tr from-indigo-900 via-indigo-800 to-slate-900 p-6 flex flex-col justify-between border-b border-slate-100">
@@ -659,7 +663,7 @@
                         </span>
                     </summary>
                     <p class="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
-                        We offer an unconditional 30-day money-back guarantee on all paid courses. If you don't feel the curriculum gave you direct clarity on how to grow your business, simply contact our support team for a full refund.
+                        We stand behind the educational quality of Marketian Mind. Each course provides 365 days of complete curriculum access with practical templates and actionable frameworks. If you encounter any issues or have questions regarding how to implement strategies for your business, our dedicated support team is here to help at support@marketianmind.com.
                     </p>
                 </details>
             </div>

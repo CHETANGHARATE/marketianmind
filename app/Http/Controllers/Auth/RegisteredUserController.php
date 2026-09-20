@@ -18,8 +18,12 @@ class RegisteredUserController extends Controller
     /**
      * Display the registration view.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
+        if ($request->filled('redirect')) {
+            session()->put('url.intended', $request->query('redirect'));
+        }
+
         return view('auth.register');
     }
 

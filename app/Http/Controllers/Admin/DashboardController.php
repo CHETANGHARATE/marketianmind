@@ -13,168 +13,22 @@ use App\Models\Enrollment;
 use App\Models\Lead;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\BusinessDashboardService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
     /**
      * Display the Admin Portal dashboard with comprehensive platform metrics,
-     * recent activity feeds, and performance indicators.
+     * recent activity feeds, financial reporting, and performance indicators.
      */
-    public function index(): View
+    public function index(Request $request, BusinessDashboardService $dashboardService): View
     {
-        $hasUsers = Schema::hasTable('users');
-        $hasCourses = Schema::hasTable('courses');
-        $hasEnrollments = Schema::hasTable('enrollments');
-        $hasOrders = Schema::hasTable('orders');
+        $data = $dashboardService->getDashboardData($request);
 
-        // Student Metrics
-        $totalStudents = $hasUsers ? User::where('role', UserRole::STUDENT->value)->count() : 0;
-        $newStudents30d = $hasUsers
-            ? User::where('role', UserRole::STUDENT->value)->where('created_at', '>=', now()->subDays(30))->count()
-            : 0;
-
-        // Course Metrics
-        $totalCourses = $hasCourses ? Course::count() : 0;
-        $publishedCourses = $hasCourses ? Course::where('status', CourseStatus::PUBLISHED->value)->count() : 0;
-        $draftCourses = $hasCourses ? Course::where('status', CourseStatus::DRAFT->value)->count() : 0;
-        $featuredCourses = $hasCourses ? Course::where('featured', true)->count() : 0;
-
-        // Enrollment Metrics
-        $totalEnrollments = $hasEnrollments ? Enrollment::count() : 0;
-        $activeEnrollments = $hasEnrollments ? Enrollment::where('status', EnrollmentStatus::ACTIVE->value)->count() : 0;
-        $completedEnrollments = $hasEnrollments ? Enrollment::where('status', EnrollmentStatus::COMPLETED->value)->count() : 0;
-        $completionRate = $totalEnrollments > 0 ? round(($completedEnrollments / $totalEnrollments) * 100, 1) : 0;
-
-        // Order & Revenue Metrics
-        // Revenue is calculated strictly from verified, paid orders (OrderStatus::PAID).
-        // Stored in paise as integer, converted to INR float.
-        $totalOrders = $hasOrders ? Order::count() : 0;
-        $paidOrders = $hasOrders ? Order::where('status', OrderStatus::PAID->value)->count() : 0;
-        $pendingOrders = $hasOrders ? Order::where('status', OrderStatus::PENDING->value)->count() : 0;
-        $failedOrders = $hasOrders ? Order::where('status', OrderStatus::FAILED->value)->count() : 0;
-        $cancelledOrders = $hasOrders ? Order::where('status', OrderStatus::CANCELLED->value)->count() : 0;
-        $totalRevenuePaise = $hasOrders ? (int) Order::where('status', OrderStatus::PAID->value)->sum('amount') : 0;
-        $totalRevenue = round($totalRevenuePaise / 100, 2);
-
-        // Mini CRM / Lead Metrics
-        $hasLeads = Schema::hasTable('leads');
-        $totalLeads = $hasLeads ? Lead::count() : 0;
-        $newLeads = $hasLeads ? Lead::where('status', LeadStatus::NEW->value)->count() : 0;
-        $convertedLeads = $hasLeads ? Lead::where('status', LeadStatus::CONVERTED->value)->count() : 0;
-        $dueFollowUps = $hasLeads ? Lead::dueTodayFollowUps()->count() : 0;
-        $overdueFollowUps = $hasLeads ? Lead::overdueFollowUps()->count() : 0;
-        $leadConversionRate = $totalLeads > 0 ? round(($convertedLeads / $totalLeads) * 100, 1) : 0;
-
-        // Course Access & Renewal Metrics
-        $hasAccessPeriods = Schema::hasTable('course_access_periods');
-        $renewalsThisMonth = $hasAccessPeriods
-            ? \App\Models\CourseAccessPeriod::where('period_type', 'renewal')
-                ->where('created_at', '>=', now()->startOfMonth())
-                ->count()
-            : 0;
-
-        $renewalRevenueThisMonthPaise = $hasOrders
-            ? (int) Order::where('status', OrderStatus::PAID->value)
-                ->where(function ($q) {
-                    $q->where('metadata->purchase_type', 'renewal')
-                      ->orWhereHas('accessPeriods', fn ($p) => $p->where('period_type', 'renewal'));
-                })
-                ->where('created_at', '>=', now()->startOfMonth())
-                ->sum('amount')
-            : 0;
-        $renewalRevenueThisMonth = round($renewalRevenueThisMonthPaise / 100, 2);
-
-        $expiringSoon = $hasEnrollments
-            ? Enrollment::whereIn('status', [EnrollmentStatus::ACTIVE->value, EnrollmentStatus::COMPLETED->value])
-                ->whereNotNull('starts_at')
-                ->whereNotNull('expires_at')
-                ->where('expires_at', '>', now())
-                ->where('expires_at', '<=', now()->addDays(30))
-                ->count()
-            : 0;
-
-        $metrics = [
-            'total_students' => $totalStudents,
-            'new_students_30d' => $newStudents30d,
-            'total_courses' => $totalCourses,
-            'published_courses' => $publishedCourses,
-            'draft_courses' => $draftCourses,
-            'featured_courses' => $featuredCourses,
-            'total_enrollments' => $totalEnrollments,
-            'active_enrollments' => $activeEnrollments,
-            'completed_enrollments' => $completedEnrollments,
-            'completion_rate' => $completionRate,
-            'total_orders' => $totalOrders,
-            'paid_orders' => $paidOrders,
-            'pending_orders' => $pendingOrders,
-            'failed_orders' => $failedOrders,
-            'cancelled_orders' => $cancelledOrders,
-            'total_revenue' => $totalRevenue,
-            'formatted_revenue' => '₹' . number_format($totalRevenue, 2),
-            'total_leads' => $totalLeads,
-            'new_leads' => $newLeads,
-            'converted_leads' => $convertedLeads,
-            'due_follow_ups' => $dueFollowUps,
-            'overdue_follow_ups' => $overdueFollowUps,
-            'lead_conversion_rate' => $leadConversionRate,
-            'renewals_this_month' => $renewalsThisMonth,
-            'renewal_revenue_this_month' => $renewalRevenueThisMonth,
-            'formatted_renewal_revenue' => '₹' . number_format($renewalRevenueThisMonth, 2),
-            'expiring_soon' => $expiringSoon,
-        ];
-
-        // Recent Activity Feeds (limited to latest 5, with eager loading)
-        $recentStudents = $hasUsers
-            ? User::where('role', UserRole::STUDENT->value)
-                ->select(['id', 'name', 'email', 'created_at'])
-                ->latest()
-                ->take(5)
-                ->get()
-            : collect();
-
-        $recentOrders = $hasOrders
-            ? Order::with(['user:id,name,email', 'course:id,title,slug,price,is_free'])
-                ->latest()
-                ->take(5)
-                ->get()
-            : collect();
-
-        $recentEnrollments = $hasEnrollments
-            ? Enrollment::with(['user:id,name,email', 'course:id,title,slug'])
-                ->latest()
-                ->take(5)
-                ->get()
-            : collect();
-
-        $recentLeads = $hasLeads
-            ? Lead::with(['course:id,title', 'bundle:id,title'])
-                ->latest()
-                ->take(5)
-                ->get()
-            : collect();
-
-        $coursesOverview = $hasCourses
-            ? Course::with('category:id,name')
-                ->withCount([
-                    'enrollments',
-                    'enrollments as completed_enrollments_count' => function ($q) {
-                        $q->where('status', EnrollmentStatus::COMPLETED->value);
-                    },
-                ])
-                ->latest()
-                ->take(5)
-                ->get()
-            : collect();
-
-        return view('admin.dashboard', compact(
-            'metrics',
-            'recentStudents',
-            'recentOrders',
-            'recentEnrollments',
-            'recentLeads',
-            'coursesOverview'
-        ));
+        return view('admin.dashboard', $data);
     }
 }
+

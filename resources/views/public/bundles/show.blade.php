@@ -152,7 +152,7 @@
                 <div class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
                     @if($bundle->thumbnail_url)
                         <div class="aspect-video rounded-xl overflow-hidden mb-6 bg-slate-100">
-                            <img src="{{ $bundle->thumbnail_url }}" alt="{{ $bundle->title }}" class="h-full w-full object-cover">
+                            <img src="{{ $bundle->thumbnail_url }}" alt="{{ $bundle->title }}" fetchpriority="high" decoding="async" width="640" height="360" class="h-full w-full object-cover">
                         </div>
                     @endif
 

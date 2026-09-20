@@ -109,7 +109,7 @@
                 </div>
                 <div class="lg:col-span-5 h-64 lg:h-full min-h-[260px] bg-slate-100 flex items-center justify-center overflow-hidden">
                     @if($featuredArticle->featured_image)
-                        <img src="{{ $featuredArticle->featured_image }}" alt="{{ $featuredArticle->title }}" class="w-full h-full object-cover">
+                        <img src="{{ $featuredArticle->featured_image }}" alt="{{ $featuredArticle->title }}" fetchpriority="high" decoding="async" width="640" height="360" class="w-full h-full object-cover">
                     @else
                         <div class="p-8 text-center text-slate-400">
                             <svg class="w-16 h-16 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,7 +130,7 @@
                 <article class="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col hover:border-slate-300 hover:shadow-md transition">
                     <a href="{{ route('blog.show', $article->slug) }}" class="block aspect-video bg-slate-100 overflow-hidden relative">
                         @if($article->featured_image)
-                            <img src="{{ $article->featured_image }}" alt="{{ $article->title }}" class="w-full h-full object-cover hover:scale-105 transition duration-300">
+                            <img src="{{ $article->featured_image }}" alt="{{ $article->title }}" loading="lazy" decoding="async" width="640" height="360" class="w-full h-full object-cover hover:scale-105 transition duration-300">
                         @else
                             <div class="w-full h-full flex items-center justify-center bg-slate-900/5 text-slate-400">
                                 <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

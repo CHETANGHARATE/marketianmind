@@ -35,8 +35,8 @@
                         <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white">
                             {{ $student->name }}
                         </h1>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/30">
-                            Student
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border {{ $lifecycleStage->badgeClasses() }}" title="{{ $lifecycleStage->description() }}">
+                            {{ $lifecycleStage->label() }}
                         </span>
                         @if($student->email_verified_at)
                             <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
@@ -59,6 +59,96 @@
                     <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Lifetime Investment</p>
                     <p class="text-xl font-black text-white mt-0.5">{{ $stats['formatted_paid_revenue'] }}</p>
                     <p class="text-[10px] text-emerald-400 font-medium">{{ $stats['paid_orders'] }} paid transactions</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Lifecycle & Communication Consent Inspector -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Customer Lifecycle Diagnosis Card -->
+        <div class="lg:col-span-2 rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-sm">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </span>
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">Customer Lifecycle Status</h2>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider border {{ $lifecycleStage->badgeClasses() }}">
+                    {{ $lifecycleStage->label() }}
+                </span>
+            </div>
+            <div class="mt-4">
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                    {{ $lifecycleStage->description() }}
+                </p>
+                <div class="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div class="rounded-xl bg-slate-950/60 p-3 border border-slate-800/60">
+                        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">Authoritative Source</span>
+                        <span class="text-slate-200 font-medium">Derived dynamically from Orders, Access Periods, Lesson Completions & Certificates</span>
+                    </div>
+                    <div class="rounded-xl bg-slate-950/60 p-3 border border-slate-800/60">
+                        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">Business Model Rule</span>
+                        <span class="text-slate-200 font-medium">One-time purchase &bull; 365-day access validity &bull; No recurring subscriptions</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Communication Consent & Channels Card -->
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-sm">
+            <div class="flex items-center gap-2 pb-3 border-b border-slate-800">
+                <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                </span>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">Consent & Channels</h2>
+            </div>
+            <div class="mt-4 space-y-3 text-xs">
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/60">
+                    <div>
+                        <span class="font-semibold text-slate-300 block">Email Channel</span>
+                        <span class="text-[10px] text-slate-400">
+                            @if($communicationConsent['email_verified'])
+                                Verified on {{ $communicationConsent['email_verified_at']?->format('M d, Y') }}
+                            @else
+                                Verification pending
+                            @endif
+                        </span>
+                    </div>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {{ $communicationConsent['email_verified'] ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border border-amber-500/30' }}">
+                        {{ $communicationConsent['email_verified'] ? 'Verified' : 'Unverified' }}
+                    </span>
+                </div>
+
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/60">
+                    <div>
+                        <span class="font-semibold text-slate-300 block">WhatsApp Channel</span>
+                        <span class="text-[10px] text-slate-400">
+                            @if($communicationConsent['whatsapp_opt_in'])
+                                Opted-in {{ $communicationConsent['whatsapp_opted_in_at'] ? '(' . $communicationConsent['whatsapp_opted_in_at']->format('M d, Y') . ')' : '' }}
+                            @else
+                                No explicit opt-in
+                            @endif
+                        </span>
+                    </div>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {{ $communicationConsent['whatsapp_opt_in'] ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-slate-500/10 text-slate-400 border border-slate-500/30' }}">
+                        {{ $communicationConsent['whatsapp_opt_in'] ? 'Opted In' : 'Not Opted In' }}
+                    </span>
+                </div>
+
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/60">
+                    <div>
+                        <span class="font-semibold text-slate-300 block">Marketing Opt-Out</span>
+                        <span class="text-[10px] text-slate-400">Unsubscribe preference</span>
+                    </div>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {{ $communicationConsent['marketing_unsubscribed'] ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' }}">
+                        {{ $communicationConsent['marketing_unsubscribed'] ? 'Unsubscribed' : 'Subscribed' }}
+                    </span>
                 </div>
             </div>
         </div>
@@ -145,6 +235,14 @@
                                 </td>
                                 <td class="py-3.5 px-4">
                                     <div class="space-y-1">
+                                        @if(isset($courseLifecycleStages[$enrollment->course_id]))
+                                            @php $cStage = $courseLifecycleStages[$enrollment->course_id]; @endphp
+                                            <div>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border {{ $cStage->badgeClasses() }}" title="{{ $cStage->description() }}">
+                                                    {{ $cStage->label() }}
+                                                </span>
+                                            </div>
+                                        @endif
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider {{ $adminBadge['classes'] }}">
                                             {{ $adminBadge['label'] }}
                                         </span>
@@ -347,6 +445,59 @@
                     {{ $certificates->links() }}
                 </div>
             @endif
+        @endif
+    </div>
+
+    <!-- Section: Customer Lifecycle Audit Timeline -->
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/90 shadow-sm p-6">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800/80">
+            <div>
+                <h2 class="text-base font-bold text-white tracking-tight">Customer Lifecycle Audit Timeline</h2>
+                <p class="text-xs text-slate-400 mt-0.5">Chronological relationship history derived from authoritative database records</p>
+            </div>
+            <span class="text-xs font-semibold text-slate-400">{{ $lifecycleTimeline->count() }} Milestones</span>
+        </div>
+
+        @if($lifecycleTimeline->isEmpty())
+            <div class="py-12 text-center">
+                <div class="mx-auto w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 mb-2">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <p class="text-xs font-medium text-slate-300">No lifecycle events recorded</p>
+            </div>
+        @else
+            <div class="mt-6 relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-800">
+                @foreach($lifecycleTimeline as $event)
+                    <div class="relative group">
+                        <!-- Timeline bullet -->
+                        <div class="absolute -left-6 top-1.5 flex items-center justify-center w-5 h-5 rounded-full bg-slate-950 border-2 border-slate-700 group-hover:border-amber-400 transition">
+                            <div class="w-1.5 h-1.5 rounded-full bg-slate-400 group-hover:bg-amber-400 transition"></div>
+                        </div>
+
+                        <!-- Milestone content -->
+                        <div class="rounded-xl border border-slate-800/80 bg-slate-950/60 p-4 hover:border-slate-700 transition">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1.5">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-xs text-white">{{ $event['title'] }}</span>
+                                    @if(!empty($event['badge']))
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider {{ $event['badge_classes'] ?? 'bg-slate-800 text-slate-300 border border-slate-700' }}">
+                                            {{ $event['badge'] }}
+                                        </span>
+                                    @endif
+                                </div>
+                                <time class="text-[11px] text-slate-400 font-mono">
+                                    {{ $event['timestamp']?->format('M d, Y \a\t h:i A') }} ({{ $event['timestamp']?->diffForHumans() }})
+                                </time>
+                            </div>
+                            <p class="text-xs text-slate-300">
+                                {{ $event['description'] }}
+                            </p>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
         @endif
     </div>
 </div>

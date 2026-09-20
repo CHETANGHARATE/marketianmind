@@ -29,8 +29,8 @@
                     <span class="font-mono font-semibold text-slate-800">{{ $order->order_number }}</span>
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="text-slate-500">Course</span>
-                    <span class="font-semibold text-slate-800">{{ $order->course->title }}</span>
+                    <span class="text-slate-500">{{ $order->isBundleOrder() ? 'Package' : 'Course' }}</span>
+                    <span class="font-semibold text-slate-800">{{ $order->productTitle() }}</span>
                 </div>
             </div>
 
@@ -39,9 +39,19 @@
                 <a href="{{ route('student.courses.checkout', $order) }}" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-500 transition">
                     Retry Payment &rarr;
                 </a>
-                <a href="{{ route('courses.show', $order->course) }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
-                    Back to Course Details
-                </a>
+                @if($order->isBundleOrder() && $order->bundle)
+                    <a href="{{ route('bundles.show', $order->bundle) }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                        Back to Bundle Details
+                    </a>
+                @elseif($order->course)
+                    <a href="{{ route('courses.show', $order->course) }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                        Back to Course Details
+                    </a>
+                @else
+                    <a href="{{ route('courses') }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                        Back to Catalog
+                    </a>
+                @endif
             </div>
 
             <p class="mt-6 text-xs text-slate-400">

@@ -79,6 +79,37 @@
                     </div>
                 </div>
 
+                @php
+                    $creationActivity = $lead->activities->firstWhere('activity_type', 'created');
+                    $attribution = $creationActivity?->properties ?? [];
+                    $hasAttribution = !empty($attribution['utm_source']) || !empty($attribution['utm_campaign']) || !empty($attribution['utm_medium']) || !empty($attribution['referrer']);
+                @endphp
+
+                @if($hasAttribution)
+                    <div class="rounded-lg bg-slate-950/60 p-3 border border-slate-800/80 text-xs">
+                        <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-1.5">
+                            Campaign &amp; Attribution Metadata
+                        </span>
+                        <div class="flex flex-wrap gap-2 text-[11px]">
+                            @if(!empty($attribution['utm_campaign']))
+                                <span class="rounded bg-slate-800 px-2 py-0.5 text-slate-300 font-mono">Campaign: {{ $attribution['utm_campaign'] }}</span>
+                            @endif
+                            @if(!empty($attribution['utm_source']))
+                                <span class="rounded bg-slate-800 px-2 py-0.5 text-slate-300 font-mono">Source: {{ $attribution['utm_source'] }}</span>
+                            @endif
+                            @if(!empty($attribution['utm_medium']))
+                                <span class="rounded bg-slate-800 px-2 py-0.5 text-slate-300 font-mono">Medium: {{ $attribution['utm_medium'] }}</span>
+                            @endif
+                            @if(!empty($attribution['utm_content']))
+                                <span class="rounded bg-slate-800 px-2 py-0.5 text-slate-300 font-mono">Content: {{ $attribution['utm_content'] }}</span>
+                            @endif
+                            @if(!empty($attribution['referrer']))
+                                <span class="rounded bg-slate-800 px-2 py-0.5 text-slate-300 font-mono truncate max-w-xs">Referrer: {{ $attribution['referrer'] }}</span>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Educational Interest & Business Meta -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-800/80">
                     <div>
@@ -370,6 +401,31 @@
                             </form>
                         </div>
                     @endif
+                @endif
+
+                @if(isset($associatedOrders) && $associatedOrders->isNotEmpty())
+                    <div class="mt-4 pt-3 border-t border-slate-800">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">
+                            Associated Purchase Orders ({{ $associatedOrders->count() }})
+                        </span>
+                        <div class="space-y-2">
+                            @foreach($associatedOrders as $ord)
+                                <div class="rounded-lg bg-slate-950/80 p-2.5 border border-slate-800 text-xs flex items-center justify-between">
+                                    <div class="min-w-0 pr-2">
+                                        <a href="{{ route('admin.orders.show', $ord) }}" class="font-bold text-indigo-400 hover:underline truncate block">
+                                            {{ $ord->order_number }}
+                                        </a>
+                                        <p class="text-[11px] text-slate-400 mt-0.5 truncate">
+                                            {{ $ord->productTitle() }} &bull; {{ $ord->formattedAmount() }}
+                                        </p>
+                                    </div>
+                                    <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold shrink-0 {{ $ord->status->badgeClasses() }}">
+                                        {{ $ord->status->label() }}
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
                 @endif
             </div>
 

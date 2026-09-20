@@ -77,6 +77,20 @@
                 @endif
             </div>
 
+            <!-- Lifecycle Stage Filter -->
+            <div class="sm:w-56">
+                <select name="lifecycle_stage"
+                        onchange="this.form.submit()"
+                        class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-300 focus:border-amber-500 focus:outline-hidden focus:ring-1 focus:ring-amber-500">
+                    <option value="">-- All Lifecycle Stages --</option>
+                    @foreach(\App\Enums\CustomerLifecycleStage::cases() as $stageCase)
+                        <option value="{{ $stageCase->value }}" {{ ($lifecycleFilter ?? '') === $stageCase->value ? 'selected' : '' }}>
+                            {{ $stageCase->label() }} ({{ $lifecycleCounts[$stageCase->value] ?? 0 }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
             <!-- Sort Select -->
             <div class="sm:w-56">
                 <select name="sort"
@@ -92,7 +106,7 @@
 
             <button type="submit"
                     class="rounded-xl bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition">
-                Search
+                Filter
             </button>
         </form>
     </div>
@@ -129,7 +143,7 @@
                     <thead>
                         <tr class="border-b border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-400 bg-slate-950/40">
                             <th class="py-3.5 pl-6 pr-4">Student</th>
-                            <th class="py-3.5 px-4">Status</th>
+                            <th class="py-3.5 px-4">Lifecycle Stage</th>
                             <th class="py-3.5 px-4 text-center">Enrollments</th>
                             <th class="py-3.5 px-4 text-center">Paid Orders</th>
                             <th class="py-3.5 px-4">Joined Date</th>
@@ -156,13 +170,17 @@
                                     </div>
                                 </td>
                                 <td class="py-4 px-4">
-                                    @if($student->email_verified_at)
+                                    @if(isset($student->lifecycle_stage))
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border {{ $student->lifecycle_stage->badgeClasses() }}" title="{{ $student->lifecycle_stage->description() }}">
+                                            {{ $student->lifecycle_stage->label() }}
+                                        </span>
+                                    @elseif($student->email_verified_at)
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                                             Verified
                                         </span>
                                     @else
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-500/10 text-slate-400 border border-slate-500/30">
-                                            Active
+                                            Registered
                                         </span>
                                     @endif
                                 </td>

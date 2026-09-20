@@ -90,7 +90,7 @@
     <!-- Featured Image -->
     @if($article->featured_image)
         <div class="mb-10 rounded-2xl overflow-hidden shadow-sm border border-slate-200">
-            <img src="{{ $article->featured_image }}" alt="{{ $article->title }}" class="w-full max-h-[480px] object-cover">
+            <img src="{{ $article->featured_image }}" alt="{{ $article->title }}" fetchpriority="high" decoding="async" width="1200" height="630" class="w-full max-h-[480px] object-cover">
         </div>
     @endif
 

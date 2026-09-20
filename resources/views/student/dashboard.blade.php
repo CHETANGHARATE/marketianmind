@@ -238,6 +238,51 @@
         </div>
     </div>
 
+    <!-- 2.5 New Student Quick Start Onboarding Guide -->
+    @if($stats['enrolled_courses'] > 0 && ($stats['lessons_completed'] ?? 0) == 0)
+        <div class="rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50/80 via-white to-indigo-50/50 p-6 shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="space-y-1">
+                    <span class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700 uppercase tracking-wider">
+                        <span class="flex h-2 w-2 rounded-full bg-indigo-600"></span> Quick Start Guide
+                    </span>
+                    <h3 class="text-base font-bold text-slate-900">Welcome to your practical learning journey</h3>
+                    <p class="text-xs text-slate-600 max-w-xl">
+                        Follow these 3 simple steps to start applying practical marketing strategies to your business. If you have any questions along the way, <a href="{{ route('contact') }}" class="font-bold text-indigo-600 hover:text-indigo-800 underline">reach out to support</a> anytime.
+                    </p>
+                </div>
+                @if($continueLearningCourse)
+                    <a href="{{ $continueLearningCourse['actionUrl'] }}" class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition shrink-0">
+                        Start Your First Lesson &rarr;
+                    </a>
+                @endif
+            </div>
+            <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-indigo-100/80 text-xs">
+                <div class="flex items-start gap-3">
+                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white font-bold text-[11px]">1</span>
+                    <div>
+                        <span class="font-bold text-slate-900 block">Select Course</span>
+                        <span class="text-slate-500 text-[11px]">Open your enrolled curriculum from your dashboard below.</span>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white font-bold text-[11px]">2</span>
+                    <div>
+                        <span class="font-bold text-slate-900 block">Watch &amp; Execute</span>
+                        <span class="text-slate-500 text-[11px]">Actionable, bite-sized lessons with practical business templates.</span>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white font-bold text-[11px]">3</span>
+                    <div>
+                        <span class="font-bold text-slate-900 block">Earn Certificate</span>
+                        <span class="text-slate-500 text-[11px]">Complete all lessons and quizzes to earn your verified credential.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- 3. Continue Learning (Top Priority Section) -->
     <div class="space-y-4">
         <div class="flex items-center justify-between">
@@ -319,6 +364,12 @@
                                 <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden" role="progressbar" aria-valuenow="{{ $continueLearningCourse['progress']['percentage'] }}" aria-valuemin="0" aria-valuemax="100" aria-label="Course completion progress">
                                     <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style="width: {{ $continueLearningCourse['progress']['percentage'] }}%"></div>
                                 </div>
+                                @if($continueLearningCourse['access_state'] === 'expired')
+                                    <p class="text-[11px] text-slate-500 mt-2 flex items-center gap-1.5 font-medium">
+                                        <svg class="h-3.5 w-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        <span>Your learning progress ({{ $continueLearningCourse['progress']['percentage'] }}%) and certificate records are permanently preserved.</span>
+                                    </p>
+                                @endif
                             </div>
                         </div>
                     </div>

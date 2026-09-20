@@ -229,13 +229,19 @@ class LeadController extends Controller
         $bundles = Bundle::orderBy('title')->get(['id', 'title']);
         $matchedUser = $lead->matchedUser();
 
+        $targetUser = $lead->convertedUser ?? $matchedUser;
+        $associatedOrders = $targetUser
+            ? $targetUser->orders()->with(['course', 'bundle'])->latest()->take(5)->get()
+            : collect();
+
         return view('admin.leads.show', compact(
             'lead',
             'admins',
             'assignees',
             'courses',
             'bundles',
-            'matchedUser'
+            'matchedUser',
+            'associatedOrders'
         ));
     }
 

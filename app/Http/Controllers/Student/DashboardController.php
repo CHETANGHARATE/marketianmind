@@ -64,20 +64,26 @@ class DashboardController extends Controller
 
             if ($accessState === 'expired') {
                 $expiredAccessCount++;
+                $actionUrl = route('courses.show', $course);
+                $actionLabel = $renewalLabel;
             } elseif ($accessState === 'expiring') {
                 $expiringSoonCount++;
                 $activeAccessCount++;
+                $actionUrl = $nextLesson
+                    ? route('student.courses.lessons.show', [$course, $nextLesson])
+                    : route('student.courses.show', $course);
+                $actionLabel = $isCompleted
+                    ? 'Review Course'
+                    : ($progress['percentage'] > 0 ? 'Continue Learning' : 'Start Course');
             } else {
                 $activeAccessCount++;
+                $actionUrl = $nextLesson
+                    ? route('student.courses.lessons.show', [$course, $nextLesson])
+                    : route('student.courses.show', $course);
+                $actionLabel = $isCompleted
+                    ? 'Review Course'
+                    : ($progress['percentage'] > 0 ? 'Continue Learning' : 'Start Course');
             }
-
-            $actionUrl = $nextLesson
-                ? route('student.courses.lessons.show', [$course, $nextLesson])
-                : route('student.courses.show', $course);
-
-            $actionLabel = $isCompleted
-                ? 'Review Course'
-                : ($progress['percentage'] > 0 ? 'Continue Learning' : 'Start Course');
 
             $certificate = $certificatesByCourse->get($course->id);
 

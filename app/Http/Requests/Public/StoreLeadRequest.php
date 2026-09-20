@@ -32,6 +32,14 @@ class StoreLeadRequest extends FormRequest
             'source' => ['nullable', 'string', 'max:100'],
             'subject' => ['nullable', 'string', 'max:255'],
             'message' => ['required', 'string', 'max:3000'],
+            // Campaign and attribution parameters (optional, validated)
+            'utm_source' => ['nullable', 'string', 'max:100'],
+            'utm_medium' => ['nullable', 'string', 'max:100'],
+            'utm_campaign' => ['nullable', 'string', 'max:100'],
+            'utm_term' => ['nullable', 'string', 'max:100'],
+            'utm_content' => ['nullable', 'string', 'max:100'],
+            'referrer' => ['nullable', 'string', 'max:500'],
+            'landing_page' => ['nullable', 'string', 'max:500'],
             // Honeypot field: must be present in form but left blank by human users
             'website' => ['nullable', 'max:0'],
         ];

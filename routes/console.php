@@ -38,6 +38,7 @@ Schedule::command('enrollments:send-expiry-notifications')
     ->name('send-course-expiry-notifications')
     ->withoutOverlapping();
 
-
-
-
+Schedule::command('retention:process-support')
+    ->dailyAt('09:00')
+    ->name('process-student-retention-support')
+    ->withoutOverlapping();

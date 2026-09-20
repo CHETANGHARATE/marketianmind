@@ -54,6 +54,20 @@ class Bundle extends Model
     }
 
     /**
+     * Bootstrap model events.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('sitemap_xml');
+        });
+
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('sitemap_xml');
+        });
+    }
+
+    /**
      * Courses included in this bundle ordered by sort_order.
      */
     public function courses(): BelongsToMany

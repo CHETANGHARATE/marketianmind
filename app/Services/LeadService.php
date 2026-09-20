@@ -78,8 +78,18 @@ class LeadService
             $inquiryDetail = $data['message'] ?? $data['subject'] ?? 'New website contact form submission';
             $existingLead->recordActivity(
                 'inquiry_submitted',
-                "Additional inquiry submitted via {$data['source']}: " . Str::limit($inquiryDetail, 100),
-                ['ip' => $ip, 'source' => $data['source'] ?? 'website']
+                "Additional inquiry submitted via " . ($data['source'] ?? 'website') . ": " . Str::limit($inquiryDetail, 100),
+                array_filter([
+                    'ip' => $ip,
+                    'source' => $data['source'] ?? 'website',
+                    'utm_source' => $data['utm_source'] ?? null,
+                    'utm_medium' => $data['utm_medium'] ?? null,
+                    'utm_campaign' => $data['utm_campaign'] ?? null,
+                    'utm_content' => $data['utm_content'] ?? null,
+                    'utm_term' => $data['utm_term'] ?? null,
+                    'referrer' => $data['referrer'] ?? null,
+                    'landing_page' => $data['landing_page'] ?? null,
+                ], fn($val) => !is_null($val))
             );
 
             // Record as internal note for easy reading in CRM
@@ -127,7 +137,17 @@ class LeadService
         $lead->recordActivity(
             'created',
             "Lead inquiry captured from source '{$lead->source}'",
-            ['ip' => $ip, 'source' => $lead->source]
+            array_filter([
+                'ip' => $ip,
+                'source' => $lead->source,
+                'utm_source' => $data['utm_source'] ?? null,
+                'utm_medium' => $data['utm_medium'] ?? null,
+                'utm_campaign' => $data['utm_campaign'] ?? null,
+                'utm_content' => $data['utm_content'] ?? null,
+                'utm_term' => $data['utm_term'] ?? null,
+                'referrer' => $data['referrer'] ?? null,
+                'landing_page' => $data['landing_page'] ?? null,
+            ], fn($val) => !is_null($val))
         );
 
         app(\App\Services\MarketingAutomationService::class)->dispatchTrigger(

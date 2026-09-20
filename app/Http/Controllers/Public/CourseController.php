@@ -77,7 +77,12 @@ class CourseController extends Controller
             // Start base query strictly scoped to published courses with eager loading
             $query = Course::query()
                 ->published()
-                ->with(['category'])
+                ->with([
+                    'category',
+                    'offers' => function ($q) {
+                        $q->currentlyValid()->orderByDesc('priority')->orderByDesc('discount_value')->orderByDesc('id');
+                    },
+                ])
                 ->withAvg('approvedReviews as average_rating', 'rating')
                 ->withCount([
                     'approvedReviews as reviews_count',
@@ -231,6 +236,31 @@ class CourseController extends Controller
             || ($selectedFeatured)
             || ($selectedSort !== $defaultSort);
 
+        $seoService = app(\App\Services\SeoService::class);
+        $catalogTitle = 'Online Marketing Courses for Business Owners';
+        if ($selectedCategory) {
+            $catalogTitle = "{$selectedCategory->name} Courses for Business Owners";
+        } elseif ($searchQuery !== '') {
+            $catalogTitle = "Search results for \"{$searchQuery}\" — Courses";
+        }
+
+        $catalogDescription = 'Explore practical, ROI-driven digital marketing courses for small business owners and startup founders. Master SEO, ads, analytics, and social media with 365-day access.';
+        if ($selectedCategory && !empty($selectedCategory->description)) {
+            $catalogDescription = $selectedCategory->description;
+        }
+
+        $seo = $seoService->buildMeta([
+            'title' => $catalogTitle,
+            'description' => $catalogDescription,
+            'canonical' => route('courses'),
+            'schemas' => [
+                $seoService->buildBreadcrumbSchema([
+                    'Home' => url('/'),
+                    'Courses' => route('courses'),
+                ]),
+            ],
+        ]);
+
         return view('public.courses.index', [
             'courses' => $courses,
             'categories' => $categories,
@@ -248,6 +278,7 @@ class CourseController extends Controller
             'enrolledCourseIds' => $enrolledCourseIds,
             'completedCourseIds' => $completedCourseIds,
             'user' => $user,
+            'seo' => $seo,
         ]);
     }
 

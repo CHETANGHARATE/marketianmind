@@ -200,6 +200,21 @@ class MarketingAutomationService
                         continue;
                     }
 
+                    // Automatically stop promotional follow-ups if lead has already converted
+                    if ($recipient instanceof Lead && $recipient->isConverted()) {
+                        $triggerVal = $automation->trigger_type instanceof AutomationTrigger ? $automation->trigger_type->value : (string) $automation->trigger_type;
+                        if (in_array($triggerVal, [AutomationTrigger::LEAD_CREATED->value, AutomationTrigger::LEAD_STATUS_CHANGED->value, AutomationTrigger::LEAD_QUALIFIED->value], true)) {
+                            $expectedStatus = $automation->conditions['status'] ?? null;
+                            if ($expectedStatus !== 'converted') {
+                                $execution->status = AutomationExecutionStatus::SKIPPED;
+                                $execution->failure_reason = 'Lead has already converted; promotional follow-up skipped.';
+                                $execution->save();
+                                $stats['skipped']++;
+                                continue;
+                            }
+                        }
+                    }
+
                     // Verify conditions still apply
                     if (!empty($automation->conditions)) {
                         if (!$this->matchesConditions($recipient, $automation->conditions, $execution->metadata ?? [])) {
@@ -273,6 +288,21 @@ class MarketingAutomationService
                     $execution->save();
                     $stats['skipped']++;
                     continue;
+                }
+
+                // Automatically stop promotional follow-ups if lead has already converted
+                if ($recipient instanceof Lead && $recipient->isConverted()) {
+                    $triggerVal = $automation->trigger_type instanceof AutomationTrigger ? $automation->trigger_type->value : (string) $automation->trigger_type;
+                    if (in_array($triggerVal, [AutomationTrigger::LEAD_CREATED->value, AutomationTrigger::LEAD_STATUS_CHANGED->value, AutomationTrigger::LEAD_QUALIFIED->value], true)) {
+                        $expectedStatus = $automation->conditions['status'] ?? null;
+                        if ($expectedStatus !== 'converted') {
+                            $execution->status = AutomationExecutionStatus::SKIPPED;
+                            $execution->failure_reason = 'Lead has already converted; promotional follow-up skipped.';
+                            $execution->save();
+                            $stats['skipped']++;
+                            continue;
+                        }
+                    }
                 }
 
                 // Verify conditions still apply

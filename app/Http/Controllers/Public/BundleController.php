@@ -30,7 +30,20 @@ class BundleController extends Controller
             ->paginate(9)
             ->withQueryString();
 
-        return view('public.bundles.index', compact('bundles', 'search'));
+        $seoService = app(\App\Services\SeoService::class);
+        $seo = $seoService->buildMeta([
+            'title' => 'Course Bundles & Special Packages — Practical Marketing',
+            'description' => 'Save on comprehensive digital marketing course packages for small businesses and founders. Includes 365-day access to curated bundles.',
+            'canonical' => route('bundles.index'),
+            'schemas' => [
+                $seoService->buildBreadcrumbSchema([
+                    'Home' => url('/'),
+                    'Bundles' => route('bundles.index'),
+                ]),
+            ],
+        ]);
+
+        return view('public.bundles.index', compact('bundles', 'search', 'seo'));
     }
 
     /**

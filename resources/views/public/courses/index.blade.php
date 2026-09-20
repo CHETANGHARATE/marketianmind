@@ -369,7 +369,7 @@
                             <!-- Course Thumbnail -->
                             <div class="relative aspect-video bg-slate-100 overflow-hidden">
                                 @if($course->thumbnailUrl())
-                                    <img src="{{ $course->thumbnailUrl() }}" alt="{{ $course->title }}" class="h-full w-full object-cover">
+                                    <img src="{{ $course->thumbnailUrl() }}" alt="{{ $course->title }}" loading="lazy" decoding="async" width="640" height="360" class="h-full w-full object-cover">
                                 @else
                                     <div class="h-full w-full bg-gradient-to-br from-indigo-500 via-indigo-600 to-indigo-800 flex items-center justify-center p-6 text-center text-white font-black text-2xl">
                                         MM

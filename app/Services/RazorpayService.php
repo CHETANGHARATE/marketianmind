@@ -51,7 +51,12 @@ class RazorpayService
     public function createOrder(int $amountInPaise, string $receipt, array $notes = []): array
     {
         if (! $this->api) {
-            // In testing or unconfigured environment, provide fallback structure
+            if (app()->environment('production')) {
+                Log::critical('Razorpay order creation attempted in production without configured API credentials.');
+                throw new \RuntimeException('Razorpay is not configured for production transactions.');
+            }
+
+            // In testing or local unconfigured environment, provide fallback structure
             return [
                 'id' => 'order_mock_' . bin2hex(random_bytes(8)),
                 'amount' => $amountInPaise,
@@ -87,11 +92,16 @@ class RazorpayService
     public function verifyPaymentSignature(string $razorpayOrderId, string $razorpayPaymentId, string $razorpaySignature): bool
     {
         if (! $this->isConfigured()) {
-            // In testing mode with mock orders
+            if (app()->environment('production')) {
+                Log::critical('Razorpay payment signature verification attempted in production without configured credentials.');
+                return false;
+            }
+
+            // In local/testing mode with mock orders
             return hash_equals(
                 hash_hmac('sha256', $razorpayOrderId . '|' . $razorpayPaymentId, 'mock_secret'),
                 $razorpaySignature
-            ) || $razorpaySignature === 'valid_test_signature';
+            ) || ($razorpaySignature === 'valid_test_signature' && app()->environment('testing'));
         }
 
         try {
@@ -126,7 +136,15 @@ class RazorpayService
             return false;
         }
 
-        $secret = $this->webhookSecret ?: 'mock_webhook_secret';
+        if (empty($this->webhookSecret)) {
+            if (app()->environment('production')) {
+                Log::critical('Razorpay webhook verification attempted in production without configured webhook secret.');
+                return false;
+            }
+            $secret = 'mock_webhook_secret';
+        } else {
+            $secret = $this->webhookSecret;
+        }
 
         try {
             $expectedSignature = hash_hmac('sha256', $rawPayload, $secret);

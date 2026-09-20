@@ -1,9 +1,9 @@
 @extends('emails.layouts.transactional')
 
 @section('content')
-    <h1 class="headline">We've Missed You! 👋</h1>
+    <h1 class="headline">Ready to Continue Learning? 🚀</h1>
     <p class="text">
-        Hello {{ $user->name }}, you've made commendable progress in <strong>{{ $course->title }}</strong>, and we'd love to help you cross the finish line.
+        Hello {{ $user->name }}, your next lesson in <strong>{{ $course->title }}</strong> is waiting for you whenever you are ready to continue building practical marketing skills.
     </p>
 
     <div class="info-panel">

@@ -234,6 +234,11 @@ class EngagementService
                         continue;
                     }
 
+                    // Respect notification preferences / marketing unsubscribe
+                    if (\App\Models\MarketingUnsubscribe::isUnsubscribed($student->email)) {
+                        continue;
+                    }
+
                     // Check last qualifying activity
                     $lastLearningDay = StudentLearningDay::query()
                         ->where('user_id', $student->id)
@@ -266,6 +271,11 @@ class EngagementService
                         ->get();
 
                     foreach ($enrolledCourses as $c) {
+                        // Exclude courses where student access is expired, cancelled, or inactive
+                        if (! $student->hasActiveAccessTo($c)) {
+                            continue;
+                        }
+
                         $progress = $c->progressFor($student);
                         if ($progress['completed'] > 0 && ! $progress['is_completed']) {
                             $inProgressCourses[] = [

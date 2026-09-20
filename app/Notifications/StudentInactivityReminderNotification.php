@@ -40,8 +40,8 @@ class StudentInactivityReminderNotification extends Notification
 
         return [
             'type' => 'inactivity_reminder',
-            'title' => "We've missed you! Continue your learning",
-            'message' => "You've made great progress in \"{$this->course->title}\". Pick up right where you left off to keep building practical marketing skills.",
+            'title' => 'Ready to continue learning? Your next lesson is waiting for you',
+            'message' => "Continue building practical marketing skills in \"{$this->course->title}\". Your next lesson is ready whenever you are.",
             'action_url' => $actionUrl,
             'course_id' => $this->course->id,
             'course_title' => $this->course->title,

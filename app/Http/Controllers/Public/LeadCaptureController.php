@@ -26,12 +26,19 @@ class LeadCaptureController extends Controller
         $lead = $leadService->createOrDeduplicateLead($validated, $request->ip());
 
         // Track Lead Created Conversion Event with Attribution
+        $attributionMeta = array_filter([
+            'source' => $lead->source,
+            'utm_source' => $validated['utm_source'] ?? null,
+            'utm_medium' => $validated['utm_medium'] ?? null,
+            'utm_campaign' => $validated['utm_campaign'] ?? null,
+            'utm_content' => $validated['utm_content'] ?? null,
+            'utm_term' => $validated['utm_term'] ?? null,
+        ]);
+
         app(\App\Services\ConversionTrackingService::class)->track('lead_created', [
             'lead_id' => $lead->id,
             'course_id' => $lead->course_id,
-            'metadata' => [
-                'source' => $lead->source,
-            ],
+            'metadata' => $attributionMeta,
         ]);
 
         if ($request->wantsJson()) {

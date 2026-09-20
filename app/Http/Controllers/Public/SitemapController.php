@@ -13,6 +13,14 @@ use Illuminate\Support\Facades\Route;
 class SitemapController extends Controller
 {
     /**
+     * Clear the cached sitemap XML.
+     */
+    public static function clearCache(): void
+    {
+        Cache::forget('sitemap_xml');
+    }
+
+    /**
      * Generate and return a dynamic XML sitemap.
      */
     public function index(): Response
@@ -28,27 +36,27 @@ class SitemapController extends Controller
                 'priority' => '1.0',
             ];
 
-            if (Route::has('courses.index')) {
+            if (Route::has('courses') || Route::has('courses.index')) {
                 $urls[] = [
-                    'loc' => route('courses.index'),
+                    'loc' => Route::has('courses') ? route('courses') : route('courses.index'),
                     'lastmod' => now()->toIso8601String(),
                     'changefreq' => 'daily',
                     'priority' => '0.9',
                 ];
             }
 
-            if (Route::has('bundles.index')) {
+            if (Route::has('bundles') || Route::has('bundles.index')) {
                 $urls[] = [
-                    'loc' => route('bundles.index'),
+                    'loc' => Route::has('bundles.index') ? route('bundles.index') : route('bundles'),
                     'lastmod' => now()->toIso8601String(),
                     'changefreq' => 'weekly',
                     'priority' => '0.8',
                 ];
             }
 
-            if (Route::has('blog.index')) {
+            if (Route::has('blog') || Route::has('blog.index')) {
                 $urls[] = [
-                    'loc' => route('blog.index'),
+                    'loc' => Route::has('blog.index') ? route('blog.index') : route('blog'),
                     'lastmod' => now()->toIso8601String(),
                     'changefreq' => 'daily',
                     'priority' => '0.8',

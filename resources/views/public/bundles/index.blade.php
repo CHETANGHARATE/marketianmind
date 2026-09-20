@@ -79,7 +79,7 @@
                             <!-- Thumbnail / Header Banner -->
                             <div class="relative aspect-video bg-gradient-to-br from-slate-900 to-indigo-950 overflow-hidden">
                                 @if($bundle->thumbnail_url)
-                                    <img src="{{ $bundle->thumbnail_url }}" alt="{{ $bundle->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                    <img src="{{ $bundle->thumbnail_url }}" alt="{{ $bundle->title }}" loading="lazy" decoding="async" width="640" height="360" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                                 @else
                                     <div class="w-full h-full flex flex-col items-center justify-center p-6 text-center">
                                         <div class="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center text-white mb-2">

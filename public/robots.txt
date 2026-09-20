@@ -9,6 +9,8 @@ Disallow: /ref/
 Disallow: /login
 Disallow: /register
 Disallow: /password/
+Disallow: /marketing/
+Disallow: /whatsapp/
 
 Allow: /
 Allow: /build/

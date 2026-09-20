@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseReview;
 use App\Models\User;
+use App\Services\SeoService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Schema;
 
@@ -14,7 +15,7 @@ class HomeController extends Controller
     /**
      * Display the Marketian Mind welcome / landing page.
      */
-    public function index(): View
+    public function index(SeoService $seoService): View
     {
         $featuredCourses = collect();
         if (Schema::hasTable('courses')) {
@@ -51,6 +52,16 @@ class HomeController extends Controller
                 ->get();
         }
 
-        return view('public.welcome', compact('featuredCourses', 'featuredReviews'));
+        $seo = $seoService->buildMeta([
+            'title' => 'Practical Digital Marketing Courses for Small Business Owners & Founders',
+            'description' => 'Master ROI-focused digital marketing strategies designed specifically for small business owners, startup founders, and entrepreneurs. 365-day access, practical frameworks.',
+            'canonical' => route('home'),
+            'schemas' => [
+                $seoService->buildOrganizationSchema(),
+                $seoService->buildWebSiteSchema(),
+            ],
+        ]);
+
+        return view('public.welcome', compact('featuredCourses', 'featuredReviews', 'seo'));
     }
 }

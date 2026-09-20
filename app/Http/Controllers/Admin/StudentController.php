@@ -15,7 +15,7 @@ class StudentController extends Controller
     /**
      * Display a paginated, searchable, filterable listing of students.
      */
-    public function index(Request $request): View
+    public function index(Request $request, \App\Services\CustomerLifecycleService $lifecycleService): View
     {
         $query = User::query()
             ->where('role', UserRole::STUDENT->value)
@@ -43,7 +43,7 @@ class StudentController extends Controller
             });
         }
 
-        // Whitelisted filters
+        // Whitelisted legacy filters
         $filter = (string) $request->query('filter', 'all');
         if ($filter === 'with_enrollments') {
             $query->has('enrollments');
@@ -53,6 +53,12 @@ class StudentController extends Controller
             $query->where('created_at', '>=', now()->subDays(30));
         } else {
             $filter = 'all';
+        }
+
+        // Lifecycle Stage Filter
+        $lifecycleFilter = (string) $request->query('lifecycle_stage', '');
+        if ($lifecycleFilter !== '' && in_array($lifecycleFilter, \App\Enums\CustomerLifecycleStage::values(), true)) {
+            $query = $lifecycleService->applyLifecycleFilter($query, $lifecycleFilter);
         }
 
         // Whitelisted sorting
@@ -67,20 +73,29 @@ class StudentController extends Controller
 
         $students = $query->paginate(15)->withQueryString();
 
+        // Resolve lifecycle stage for each displayed student
+        foreach ($students as $student) {
+            $student->lifecycle_stage = $lifecycleService->resolveLifecycleStage($student);
+        }
+
+        $lifecycleCounts = $lifecycleService->getLifecycleDistribution();
+
         return view('admin.students.index', compact(
             'students',
             'counts',
             'search',
             'filter',
-            'sort'
+            'sort',
+            'lifecycleFilter',
+            'lifecycleCounts'
         ));
     }
 
     /**
      * Display comprehensive student audit inspector including enrollments, progress,
-     * purchase history, and certificates.
+     * purchase history, lifecycle audit timeline, and certificates.
      */
-    public function show(User $student): View
+    public function show(User $student, \App\Services\CustomerLifecycleService $lifecycleService): View
     {
         // Enforce strict student role authorization to prevent role pollution and IDOR
         abort_unless($student->isStudent(), 404);
@@ -105,9 +120,24 @@ class StudentController extends Controller
             'certificates_count' => $certificatesCount,
         ];
 
+        // Authoritative Lifecycle Resolution & Timeline
+        $lifecycleStage = $lifecycleService->resolveLifecycleStage($student);
+        $lifecycleTimeline = $lifecycleService->getLifecycleAuditHistory($student);
+
+        // Communication Consent & Privacy Settings
+        $communicationConsent = [
+            'email_verified' => (bool) $student->email_verified_at,
+            'email_verified_at' => $student->email_verified_at,
+            'whatsapp_opt_in' => (bool) $student->whatsapp_opt_in,
+            'whatsapp_opted_in_at' => $student->whatsapp_opted_in_at,
+            'whatsapp_consent_source' => $student->whatsapp_consent_source,
+            'marketing_unsubscribed' => \App\Models\MarketingUnsubscribe::isUnsubscribed($student->email),
+            'is_marketing_unsubscribed' => \App\Models\MarketingUnsubscribe::isUnsubscribed($student->email),
+        ];
+
         // Paginated enrollments with calculated progress per course
         $enrollments = $student->enrollments()
-            ->with(['course.category'])
+            ->with(['course.category', 'accessPeriods'])
             ->latest()
             ->paginate(10, ['*'], 'enrollments_page')
             ->withQueryString();
@@ -117,11 +147,15 @@ class StudentController extends Controller
             $enrollment->course_progress = $enrollment->course
                 ? $enrollment->course->progressFor($student)
                 : ['total' => 0, 'completed' => 0, 'percentage' => 0, 'is_completed' => false];
+
+            if ($enrollment->course) {
+                $enrollment->course_lifecycle_stage = $lifecycleService->resolveCourseLifecycleStage($student, $enrollment->course);
+            }
         }
 
         // Paginated orders
         $orders = $student->orders()
-            ->with(['course:id,title,slug'])
+            ->with(['course:id,title,slug', 'bundle:id,title,slug'])
             ->latest()
             ->paginate(10, ['*'], 'orders_page')
             ->withQueryString();
@@ -138,7 +172,10 @@ class StudentController extends Controller
             'stats',
             'enrollments',
             'orders',
-            'certificates'
+            'certificates',
+            'lifecycleStage',
+            'lifecycleTimeline',
+            'communicationConsent'
         ));
     }
 }

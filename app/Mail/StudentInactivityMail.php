@@ -24,7 +24,7 @@ class StudentInactivityMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "We've missed you! Continue learning {$this->course->title} — Marketian Mind",
+            subject: "Ready to continue learning? Your next lesson is waiting for you — Marketian Mind",
         );
     }
 

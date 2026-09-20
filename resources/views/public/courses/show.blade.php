@@ -130,7 +130,7 @@
                             <!-- Course Thumbnail / Media Preview -->
                             <div class="aspect-video rounded-2xl overflow-hidden mb-6 bg-slate-100 border border-slate-100 shadow-2xs relative">
                                 @if($course->thumbnailUrl())
-                                    <img src="{{ $course->thumbnailUrl() }}" alt="{{ $course->title }}" class="h-full w-full object-cover">
+                                    <img src="{{ $course->thumbnailUrl() }}" alt="{{ $course->title }}" fetchpriority="high" decoding="async" width="640" height="360" class="h-full w-full object-cover">
                                 @else
                                     <div class="h-full w-full bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-900 flex flex-col items-center justify-center p-6 text-center text-white">
                                         <span class="text-3xl font-black tracking-wider mb-1">MM</span>
@@ -334,11 +334,11 @@
                                             </a>
                                         @endif
                                     @else
-                                        <a href="{{ route('login') }}" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-xs hover:bg-indigo-500 transition text-center">
+                                        <a href="{{ route('login', ['redirect' => route('courses.show', $course)]) }}" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-xs hover:bg-indigo-500 transition text-center">
                                             Login to Enroll Free &rarr;
                                         </a>
                                         <p class="mt-2.5 text-center text-xs text-slate-400">
-                                            New here? <a href="{{ route('register') }}" class="text-indigo-600 font-semibold underline">Register free account</a>
+                                            New here? <a href="{{ route('register', ['redirect' => route('courses.show', $course)]) }}" class="text-indigo-600 font-semibold underline">Register free account</a>
                                         </p>
                                     @endauth
                                 @else
@@ -360,11 +360,11 @@
                                             </a>
                                         @endif
                                     @else
-                                        <a href="{{ route('login') }}" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-xs hover:bg-indigo-500 transition text-center font-bold">
+                                        <a href="{{ route('login', ['redirect' => route('courses.show', $course)]) }}" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-xs hover:bg-indigo-500 transition text-center font-bold">
                                             {{ $ctaVariant?->getConfigValue('button_text') ?? 'Buy Now →' }}
                                         </a>
                                         <p class="mt-2.5 text-center text-xs text-slate-400">
-                                            New here? <a href="{{ route('register') }}" class="text-indigo-600 font-semibold underline">Create free account</a>
+                                            New here? <a href="{{ route('register', ['redirect' => route('courses.show', $course)]) }}" class="text-indigo-600 font-semibold underline">Create free account</a>
                                         </p>
                                     @endauth
                                     @if($ctaVariant && $ctaVariant->getConfigValue('supporting_message'))
@@ -583,6 +583,10 @@
                                     @if($course->instructor->avatarUrl())
                                         <img src="{{ $course->instructor->avatarUrl() }}"
                                              alt="{{ $course->instructor->name }}"
+                                             loading="lazy"
+                                             decoding="async"
+                                             width="80"
+                                             height="80"
                                              class="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl object-cover border border-slate-200 shadow-xs shrink-0">
                                     @else
                                         <div class="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xl sm:text-2xl shadow-xs shrink-0">
@@ -1080,13 +1084,32 @@
                                     <input type="hidden" name="source" value="course_landing_faq">
                                     <input type="hidden" name="subject" value="Pre-enrollment Question: {{ $course->title }}">
 
+                                    @if(request('utm_source'))
+                                        <input type="hidden" name="utm_source" value="{{ request('utm_source') }}">
+                                    @endif
+                                    @if(request('utm_medium'))
+                                        <input type="hidden" name="utm_medium" value="{{ request('utm_medium') }}">
+                                    @endif
+                                    @if(request('utm_campaign'))
+                                        <input type="hidden" name="utm_campaign" value="{{ request('utm_campaign') }}">
+                                    @endif
+                                    @if(request('utm_content'))
+                                        <input type="hidden" name="utm_content" value="{{ request('utm_content') }}">
+                                    @endif
+                                    @if(request('utm_term'))
+                                        <input type="hidden" name="utm_term" value="{{ request('utm_term') }}">
+                                    @endif
+
                                     <div>
                                         <input type="text"
                                                name="name"
                                                required
                                                value="{{ old('name') }}"
                                                placeholder="Your Name"
-                                               class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600">
+                                               class="w-full rounded-lg border @error('name') border-rose-400 @else border-slate-300 @enderror px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600">
+                                        @error('name')
+                                            <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
+                                        @enderror
                                     </div>
 
                                     <div>
@@ -1095,7 +1118,10 @@
                                                required
                                                value="{{ old('email') }}"
                                                placeholder="Your Email Address"
-                                               class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600">
+                                               class="w-full rounded-lg border @error('email') border-rose-400 @else border-slate-300 @enderror px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600">
+                                        @error('email')
+                                            <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
+                                        @enderror
                                     </div>
 
                                     <div>
@@ -1103,13 +1129,20 @@
                                                   rows="2"
                                                   required
                                                   placeholder="What would you like to know before enrolling?"
-                                                  class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600">{{ old('message') }}</textarea>
+                                                  class="w-full rounded-lg border @error('message') border-rose-400 @else border-slate-300 @enderror px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden focus:ring-1 focus:ring-indigo-600">{{ old('message') }}</textarea>
+                                        @error('message')
+                                            <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
+                                        @enderror
                                     </div>
 
                                     <button type="submit"
                                             class="w-full rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition cursor-pointer">
                                         Ask Faculty &rarr;
                                     </button>
+
+                                    <p class="text-[11px] text-slate-500 text-center">
+                                        We only use your email to answer your questions. No spam.
+                                    </p>
                                 </form>
                             @endif
                         </div>
@@ -1137,7 +1170,7 @@
                             <div class="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-md transition">
                                 <div class="relative aspect-video bg-slate-100 overflow-hidden">
                                     @if($related->thumbnailUrl())
-                                        <img src="{{ $related->thumbnailUrl() }}" alt="{{ $related->title }}" class="h-full w-full object-cover">
+                                        <img src="{{ $related->thumbnailUrl() }}" alt="{{ $related->title }}" loading="lazy" decoding="async" width="640" height="360" class="h-full w-full object-cover">
                                     @else
                                         <div class="h-full w-full bg-gradient-to-br from-indigo-500 via-indigo-600 to-indigo-800 flex items-center justify-center p-6 text-center text-white font-black text-2xl">
                                             MM

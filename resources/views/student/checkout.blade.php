@@ -14,7 +14,7 @@
                     &larr; Back to Course Overview
                 </a>
             @else
-                <a href="{{ route('courses.index') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition">
+                <a href="{{ route('courses') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition">
                     &larr; Back to Catalog
                 </a>
             @endif

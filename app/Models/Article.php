@@ -51,6 +51,14 @@ class Article extends Model
                 $article->reading_time_minutes = max(1, (int) ceil($words / 200));
             }
         });
+
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('sitemap_xml');
+        });
+
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('sitemap_xml');
+        });
     }
 
     public function author(): BelongsTo

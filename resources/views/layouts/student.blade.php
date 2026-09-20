@@ -118,8 +118,14 @@
         </nav>
 
         <!-- Sidebar Footer -->
-        <div class="p-4 border-t border-slate-100 bg-slate-50/50">
-            <a href="{{ route('home') }}" class="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs font-semibold text-slate-600 hover:text-indigo-600 bg-white border border-slate-200 rounded-lg shadow-xs hover:border-indigo-200 transition">
+        <div class="p-4 border-t border-slate-100 bg-slate-50/50 space-y-2">
+            <a href="{{ route('contact') }}" class="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs font-semibold text-slate-600 hover:text-indigo-600 bg-white border border-slate-200 rounded-lg shadow-2xs hover:border-indigo-200 transition">
+                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <span>Need Help? Contact Support</span>
+            </a>
+            <a href="{{ route('home') }}" class="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs font-semibold text-slate-600 hover:text-indigo-600 bg-white border border-slate-200 rounded-lg shadow-2xs hover:border-indigo-200 transition">
                 &larr; Back to Main Website
             </a>
         </div>
@@ -184,7 +190,10 @@
                 </a>
             </nav>
 
-            <div class="p-4 border-t border-slate-100">
+            <div class="p-4 border-t border-slate-100 space-y-2">
+                <a href="{{ route('contact') }}" class="block text-center w-full px-3 py-2 text-xs font-semibold text-slate-600 hover:text-indigo-600 bg-slate-50 border border-slate-200 rounded-lg">
+                    Need Help? Contact Support
+                </a>
                 <a href="{{ route('home') }}" class="block text-center w-full px-3 py-2 text-xs font-semibold text-slate-600 hover:text-indigo-600 bg-slate-50 border border-slate-200 rounded-lg">
                     &larr; Back to Main Website
                 </a>

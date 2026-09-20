@@ -38,6 +38,11 @@ class ReportingService
                 $start = $now->copy()->startOfDay();
                 $label = 'Today';
                 break;
+            case 'yesterday':
+                $start = $now->copy()->subDay()->startOfDay();
+                $end = $now->copy()->subDay()->endOfDay();
+                $label = 'Yesterday (' . $start->format('M d, Y') . ')';
+                break;
             case '7d':
                 $start = $now->copy()->subDays(7)->startOfDay();
                 $label = 'Last 7 Days';
@@ -61,10 +66,21 @@ class ReportingService
                 break;
             case 'custom':
                 if ($customStart) {
-                    $start = Carbon::parse($customStart)->startOfDay();
+                    try {
+                        $start = Carbon::parse($customStart)->startOfDay();
+                    } catch (\Throwable) {
+                        $start = null;
+                    }
                 }
                 if ($customEnd) {
-                    $end = Carbon::parse($customEnd)->endOfDay();
+                    try {
+                        $end = Carbon::parse($customEnd)->endOfDay();
+                    } catch (\Throwable) {
+                        $end = null;
+                    }
+                }
+                if ($start && $end && $start->gt($end)) {
+                    [$start, $end] = [$end->copy()->startOfDay(), $start->copy()->endOfDay()];
                 }
                 $label = ($start ? $start->format('M d, Y') : 'Beginning') . ' - ' . ($end ? $end->format('M d, Y') : 'Present');
                 break;

@@ -83,6 +83,11 @@ class SeoMeta extends Component
             'payment/',
             'ref',
             'ref/',
+            'marketing',
+            'marketing/',
+            'whatsapp',
+            'whatsapp/',
+            'health',
         ];
 
         foreach ($privatePrefixes as $prefix) {

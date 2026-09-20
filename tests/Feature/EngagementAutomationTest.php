@@ -832,4 +832,63 @@ class EngagementAutomationTest extends TestCase
         $this->assertNull($res);
         Notification::assertNothingSent();
     }
+
+    public function test_23_inactive_reminder_excludes_expired_access_students(): void
+    {
+        Notification::fake();
+        Mail::fake();
+
+        // Expired access period
+        Enrollment::create([
+            'user_id' => $this->student->id,
+            'course_id' => $this->course->id,
+            'status' => EnrollmentStatus::ACTIVE,
+            'starts_at' => now()->subDays(400),
+            'expires_at' => now()->subDays(35),
+            'enrolled_at' => now()->subDays(400),
+        ]);
+
+        LessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $this->lesson1->id,
+            'completed' => true,
+            'completed_at' => now()->subDays(40),
+        ]);
+
+        $count = $this->engagementService->processInactivityReminders();
+
+        $this->assertEquals(0, $count);
+        Notification::assertNotSentTo($this->student, StudentInactivityReminderNotification::class);
+        Mail::assertNothingSent();
+    }
+
+    public function test_24_inactive_reminder_excludes_unsubscribed_students(): void
+    {
+        Notification::fake();
+        Mail::fake();
+
+        Enrollment::create([
+            'user_id' => $this->student->id,
+            'course_id' => $this->course->id,
+            'status' => EnrollmentStatus::ACTIVE,
+            'enrolled_at' => now()->subDays(20),
+        ]);
+
+        LessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $this->lesson1->id,
+            'completed' => true,
+            'completed_at' => now()->subDays(10),
+        ]);
+
+        // Student has opted out / unsubscribed
+        \App\Models\MarketingUnsubscribe::recordUnsubscribe($this->student->email, 'Student preference');
+
+        $count = $this->engagementService->processInactivityReminders();
+
+        $this->assertEquals(0, $count);
+        Notification::assertNotSentTo($this->student, StudentInactivityReminderNotification::class);
+        Mail::assertNothingSent();
+    }
 }
+

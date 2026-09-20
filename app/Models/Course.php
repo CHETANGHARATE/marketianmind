@@ -67,6 +67,20 @@ class Course extends Model
     }
 
     /**
+     * Bootstrap model events.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('sitemap_xml');
+        });
+
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('sitemap_xml');
+        });
+    }
+
+    /**
      * Get the category that this course belongs to.
      */
      public function category(): BelongsTo
@@ -636,6 +650,10 @@ class Course extends Model
      */
     public function currentOffer(): ?Offer
     {
+        if ($this->relationLoaded('offers')) {
+            return $this->offers->first();
+        }
+
         return app(\App\Services\PricingService::class)->getWinningOffer($this);
     }
 

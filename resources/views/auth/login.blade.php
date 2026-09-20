@@ -28,6 +28,15 @@
                 </div>
             @endif
 
+            @if(request()->query('redirect'))
+                <div class="mb-5 rounded-lg bg-indigo-50 p-3.5 text-xs font-medium text-indigo-900 border border-indigo-200 flex items-start gap-2.5">
+                    <svg class="h-4 w-4 text-indigo-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Please sign in or create an account to proceed with your course enrollment.</span>
+                </div>
+            @endif
+
             <form method="POST" action="{{ route('login') }}" class="space-y-5">
                 @csrf
 
@@ -107,7 +116,7 @@
             <!-- Card Footer -->
             <div class="mt-6 pt-6 border-t border-slate-100 text-center text-sm text-slate-600">
                 Don't have an account?
-                <a href="{{ route('register') }}" class="font-semibold text-indigo-600 hover:text-indigo-500 transition">
+                <a href="{{ request('redirect') ? route('register', ['redirect' => request('redirect')]) : route('register') }}" class="font-semibold text-indigo-600 hover:text-indigo-500 transition">
                     Create an account
                 </a>
             </div>
